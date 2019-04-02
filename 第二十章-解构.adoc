@@ -1,0 +1,225 @@
+== 解构
+
+=== 解构和赋值
+
+解构和赋值可以结合使用。
+
+[source,perl6]
+.deconstruction and assignment
+----
+my (Str $a, Str $b, Int $c) = <a b>;
+say [$a, $b, $c].perl;
+# OUTPUT«["a", "b", Int]␤»
+----
+
+要跳过列表中的元素, 使用匿名状态变量 `$`。
+
+[source,perl6]
+.skip variable with `$`
+----
+my ($,$a,$,%h) = ('a', 'b', [1,2,3], {:1th});
+say [$a, %h].perl;
+# OUTPUT«["b", {:th(1)}]␤»
+----
+
+=== 使用签名解构参数
+
+[source,perl6]
+.pass hash to routine
+----
+sub myfunc(%h) {...}
+----
+
+现在我可以使用一个散列来调用该函数:
+
+[source,perl6]
+.call myfunc with hash
+----
+my %h = a => 1, b => 'this', c => 2.2;
+myfunc(%h);
+----
+
+如果我想验证某些特定的键是否符合某种类型：
+
+[source,perl6]
+.parameters constraint with where clause
+----
+my %h = a => 1, b => 'this', c => 2.2;
+
+sub myfunc(
+    %h where 
+    .<a> ~~ Int && 
+    .<b> ~~ Str && 
+    .<c> ~~ Rat
+) {
+    say %h.perl;
+}
+
+myfunc(%h);
+----
+
+如果我还想把散列的各个键赋值给其他变量：
+
+[source,perl6]
+.parameters constraint with where clause
+----
+sub myfunc(
+    %h where 
+    .<a> ~~ Int && 
+    .<b> ~~ Str && 
+    .<c> ~~ Rat
+) {
+    my $a = %h<a>;
+    my %b = %h<b>;
+    my %c = %h<c>;
+}
+----
+
+这样很烦, 因为把散列的值赋值给变量, 这样的语句可能要重复很多次, 而且你也发现了这会重复引用那个散列, 很多次!
+
+参数后面可以跟着用圆括号包围的子签名, 这就会解构所给定的参数.
+
+[source,perl6]
+.hash deconstruction
+----
+sub myfunc(%h (Int :$a, Str :$b, Rat :$c)) {...}
+----
+
+=== 列表解构
+
+列表的解构正好是列表的元素:
+
+[source,perl6]
+.first element of array using destructuring
+----
+sub first(@array ($first, *@rest) ) { $first }
+----
+
+很神奇吧, 你不用在函数体里面写出 `first` 函数的逻辑, 你只使用子签名, 就自动获得了获取列表首元素的逻辑.
+
+[source,perl6]
+.first element of array using destructuring
+----
+sub first([$first, *@]) { $first }
+----
+
+=== 散列解构
+
+散列的解构是它的 pairs:
+
+[source,perl6]
+.anonymous hash deconstruction
+----
+sub all-dimensions(% (:length(:$x), :width(:$y), :depth(:$z))) {
+    $x andthen $y andthen $z andthen True
+}
+----
+
+尖号块儿循环也能解构散列:
+
+[source,perl6]
+.hash deconstruction with pointy block
+----
+my %hhgttu = (:40life, :41universe, :42everything);
+for %hhgttu -> (:$key, :$value) {
+  say "$key → $value";
+}
+# OUTPUT: «universe → 41␤life → 40␤everything → 42␤» 
+----
+
+通常, 对象是基于对象的属性来解构的. 惯用法就是在 for 循环中解包一个 link:https://docs.perl6.org/type/Pair[Pair] 的键和值:
+
+[source,perl6]
+.pairs deconstruction with pointy block
+----
+for <Peter Paul Merry>.pairs -> (:key($index), :value($guest)) { }
+----
+
+对象解包为它们的属性只是默认行为. 要使对象以另外的方式解构, 要更改它的 link:https://docs.perl6.org/routine/Capture[Capture].
+
+
+== 解构 JSON
+
+相当不错，但如果你有**更**复杂的东西呢？
+
+假如说一块儿有嵌套结构的 JSON，某些部分可能缺失了, 它们需要默认值, 等等。
+
+[source,perl6]
+.parse json to hash object
+----
+use JSON::Fast;
+my $item = from-json(q:to/END/);
+    {
+        "book" : {
+            "title"  : "A Christmas Carol",
+            "author" : "Charles Dickens"
+        },
+        "count" : 12,
+        "tags" : [ "christmas", "santa"]
+    }
+    END
+----
+
+我们可以使用 link:https://github.com/timo/json_fast[JSON::Fast] 的 `from-json()` 将其解析为 perl 中的数据结构。 你可以在函数签名中描述整个 JSON 结构，以便接收以下内容：
+
+[source,perl6]
+.anonymous hash deconstruction
+----
+sub myfunc(% (:%book (Str:D :$title, Str:D :$author), Int :$count,
+              :@tags ($first-tag, *@other-tags)) )
+{...}
+----
+
+现在，在函数体中，我可以将这些部分引用为 `$title`，`$author`，`$count`和 `@tags`。 为了方便起见，我还将标签分成了 `$first-tag` 和 `@other-tags`。
+
+== 在块儿中使用签名
+
+当然，签名对于子程序来说是幻想的，但是你也可以在块儿(Block)中使用签名和解构。 假设你有一个上面的 JSON 条目的数组，并希望通过一个 `for` 循环遍历它们？ 只需在 `for` 的尖号块中使用解构签名即可：
+
+[source,perl6]
+.hash deconstruction with pointy block
+----
+for @itemlist -> % (:%book (Str:D :$title, Str:D :$author), Int :$count,
+                    :@tags ($first-tag, *@other-tags))
+{
+    say "$title, $author, $count, @tags[], $first-tag, @other-tags[]"
+}
+----
+
+注意在这种情况下，我甚至不需要散列本身，所以我省略了散列的名称，仅使用 `％` 作为匿名散列（关联）。
+
+== 你甚至可以解构对象!
+
+你有没有试过遍历一组对象，你所做的第一件事是调用一些访问器来获取一些属性？ 当然，你可以使用 `.attribute` 和 主题化的迭代器，但是使用子签名，你可以做更多。
+
+[source,perl6]
+.object deconstruction
+----
+class Book {
+    has $.title;
+    has $.author;
+    has $.count;
+    has @.tags;
+}
+
+my @booklist =
+    Book.new(title => 'A Christmas Carol',
+             author => 'Charles Dickens',
+             count => 12,
+             tags => <ghost christmas>),
+
+    Book.new(title => 'A Visit from St. Nicholas',
+             author => 'Clement Clarke Moore',
+             count => 4,
+             tags => <santa christmas>);
+
+for @booklist -> Book $b (:$title,:$author, :$count, :@tags) {
+    say "$title, $author, $count, @tags[]";
+}
+----
+
+如果您想检查类型或定义，或设置默认值，您都可以在签名中正确地执行。 如果您不喜欢对象属性的名称，则可以使用别名来重命名它们, 你开心就行。
+
+== 结论
+
+我发现解构参数在与数据库查询结果和 JSON 交互中非常有用。 您可以使用任何其他签名特性，包括指定类型，定义，可选性，默认值，使用别名重命名，使用子集约束或“where”从句，slurpies等。

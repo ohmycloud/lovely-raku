@@ -1,0 +1,70 @@
+== Perl 6 介绍
+
+Perl 6 的设计进程是从 2000 年开始的. 在2000年7月19号 link:http://en.wikipedia.org/wiki/O%27Reilly_Open_Source_Convention[Perl大会]  的第四天, Larry Wall 首次宣布了 Perl 6 的设计进度.
+
+Perl 6 可以有多个实现, 其中第一个完成度最高的实现是开始于 2005 年的 link:https://github.com/perl6/Pugs.hs[Pugs], Pugs 解释器是用 link:https://www.haskell.org[Haskell] 实现的, 2015 年以后就没再更新, 但是 Perl 6 设计团队吸收了很多函数式编程的思想.
+
+2015 年12月25 日, Perl 6 的第一个稳定的规范发布了. 现在完成度最高的 Perl 6 实现是 link:https://rakudo.org[Rakudo], 其使用 link:http://moarvm.org[MoarVM] 或 Java 虚拟机作为运行时环境.
+
+== 安装
+
+link:https://rakudo.org/files[Rakudo Star]是 Perl 6 的一个发行版, 由 Rakudo 编译器加上一些包组成, 可以直接下载对应平台的安装包, 按照说明文档进行安装.
+
+如果想体验最新的 Perl 6 特性, 请自行编译 link:https://github.com/rakudo/rakudo[rakudo]:
+
+[source,shell]
+.编译 Perl 6
+----
+git clone https://github.com/rakudo/rakudo.git
+cd rakudo
+perl Configure.pl --gen-moar --gen-nqp --backends=moar --prefix=/opt/rakudo
+make
+make install
+----
+
+安装完 Rakudo Perl 6 编译器后, 使用自带的 link:https://github.com/ugexe/zef[zef]安装 `Linenoise` 模块以获得简单的历史命令和自动补全功能.
+
+Linux 用户还可以使用为 Rakudo 预编译好的系统包来安装 Rakudo Perl 6, 有关详细信息, 请参考 link:https://github.com/nxadm/rakudo-pkg[https://github.com/nxadm/rakudo-pkg].
+
+== Docker
+
+[source,shell]
+.Docker
+----
+docker pull rakudo-star
+----
+
+== REPL
+
+Perl 6 自带了一个简陋的 REPL, 用于进行代码的快速测试. 打开系统的终端, 键入 `perl6`, 即可进入 REPL, 键入一些 Perl 6 代码:
+
+[source,shell]
+.Read,Evalute,Print,Loop
+----
+# perl6
+To exit type 'exit' or '^D'
+> [+] 1,2,3
+6
+> .say for 1..5
+1
+2
+3
+4
+5
+----
+
+目前的 REPL 功能还很简陋, 如果要输入一些复杂的语句, 这个 REPL 就变得不太友好了. 
+
+== IDE
+
+2019 年3月份, link:https://commaide.com[comma]发布了第一个 Perl 6 编辑器社区版, 即逗号编辑器, 同时还有 Perl 6 的 IDEA 插件. 社区版的逗号编辑器功能已经基本够用, 如果你是资深 Perl 6 开发者或深度 Perl 6 爱好者, 建议购买完整版.
+
+如果你使用 VSCode/Atom, 那么需要到应用商店安装 Perl 6 插件.
+
+
+
+
+
+
+
+

@@ -1,0 +1,11 @@
+== 有理数
+
+== Int
+
+== Num
+
+== BigInt
+
+== Fat
+
+== FatRat

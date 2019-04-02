@@ -1,0 +1,182 @@
+== 字符串
+
+=== chars
+
+[source,perl6]
+.字符个数
+----
+'楽土star'.chars # 6
+----
+
+=== ord
+
+字符串操作
+=== comb
+
+[source,perl6]
+.comb
+----
+my $str = 'The quick brown fox jumps over the 100 lazy dog';
+$str.comb: /<:alpha>+/ 
+# (The quick brown fox jumps over the lazy dog)
+----
+
+`comb` 返回一个 Seq 序列。
+
+=== substr substr-rw  substr-eq 字符串截取
+[source,perl6]
+.
+----
+
+----
+
+=== subst subst-mutate 字符串截取
+
+[source,perl6]
+.
+----
+
+----
+
+=== split 字符串分割
+
+[source,perl6]
+.
+----
+
+----
+
+=== join 字符串连接
+
+[source,perl6]
+.
+----
+
+----
+
+=== trans 字符串翻译
+
+[source,perl6]
+.
+----
+
+----
+
+=== flip 字符串翻转
+
+[source,perl6]
+.
+----
+
+----
+
+=== trim-leading trim-trailing trim chomp chop
+
+[source,perl6]
+.
+----
+
+----
+
+字符串位置：
+=== indices
+
+[source,perl6]
+.
+----
+
+----
+
+=== index 
+
+[source,perl6]
+.
+----
+
+----
+
+=== rindex 
+
+[source,perl6]
+.
+----
+
+----
+
+=== starts-with 
+
+[source,perl6]
+.
+----
+
+----
+
+=== ends-with 
+
+[source,perl6]
+.
+----
+
+----
+
+=== pred succ
+
+[source,perl6]
+.
+----
+
+----
+
+字符串转换
+=== lines
+
+[source,perl6]
+.
+----
+
+----
+
+=== words
+
+[source,perl6]
+.
+----
+
+----
+
+=== contains
+
+[source,perl6]
+.
+----
+
+----
+
+=== match
+
+[source,perl6]
+.
+----
+
+----
+
+== indent
+
+[source,perl6]
+.
+----
+
+----
+
+大小写
+
+=== uc lc tc fc tclc wordcase
+
+[source,perl6]
+.
+----
+
+----
+
+== 字符串引用/插值
+

@@ -1,0 +1,251 @@
+
+== $_ 变量
+
+`$_` 是主题变量。它是*没有显式签名的块*的默认参数，因此 `for @array {...}` 和 `given $var {...}` 这样的构造通过调用块绑定到 `$_`。
+
+
+=== for
+
+[source,perl6]
+.for
+----
+for <a b c> { say $_ }  # sets $_ to 'a', 'b' and 'c' in turn
+say $_ for <a b c>;     # same, even though it's not a block
+----
+
+## given
+
+[source,perl6]
+.given
+----
+given 'a'   { say $_ }  # sets $_ to 'a'
+say $_ given 'a';       # same, even though it's not a block
+----
+
+设置默认的主题变量可以省去很多打字：
+
+[source,perl6]
+----
+for Date.new('2018-01-01') .. Date.new('2018-01-07') {
+  printf("%04d%02d%02d%02d%02d%02d\n", .year, .month, .day, .hour, .minute, .second) given .DateTime
+}
+
+# 20180101000000
+# 20180102000000
+# 20180103000000
+# 20180104000000
+# 20180105000000
+# 20180106000000
+# 20180107000000
+----
+
+对象初始化：
+
+[source,perl6]
+----
+class Employee {
+    subset Salary         of Real where * > 0;
+    subset NonEmptyString of Str  where * ~~ /\S/; 
+
+    has NonEmptyString $.name    is rw;
+    has NonEmptyString $.surname is rw;
+    has Salary         $.salary  is rw;
+
+    method gist {
+        return qq:to[END];
+        Name:    {$.name}
+        Surname: {$.surname}
+        Salary:  {$.salary}
+        END
+    }
+}
+my $employee = Employee.new();
+
+given $employee {
+    .name    = 'Sally';
+    .surname = 'Ride';
+    .salary  = 200;
+}
+
+say $employee;
+----
+
+## regex
+
+在方法上调用 `$_` 可以通过省略变量名来缩的更短：
+
+[source,perl6]
+----
+.say;                   # same as $_.say
+----
+
+`m/regex/` 和 `/regex/` 正则匹配 `$_` 而 `s/regex/subst/` 替换作用于 `$_`：
+
+[source,perl6]
+----
+say "Looking for strings with non-alphabetic characters...";
+for <ab:c d$e fgh ij*> {
+    .say if m/<-alpha>/;
+}
+
+# OUTPUT: «Looking for strings with non-alphabetic characters...
+#          ab:c
+#          d$e
+#          ij*␤»
+----
+
+## with/without
+
+with 不引入块时也能设置 `$_` 主题变量：
+
+[source,perl6]
+.with
+----
+say $_ with 42; # 42
+.say with 42;   # 42
+----
+
+with/without 会把条件设置为 `$_`：
+
+[source,perl6]
+.with
+----
+# The below code says "Found a at 0"
+my $s = "abc";
+with   $s.index("a") { say "Found a at $_" }
+orwith $s.index("b") { say "Found b at $_" }
+orwith $s.index("c") { say "Found c at $_" }
+else                 { say "Didn't find a, b or c" }
+----
+
+## when
+
+`when` 语句使主题变量 `$_` 和所提供的表达式进行智能匹配，以使在指定匹配的时候能检查值、正则表达式和类型：
+
+[source,perl6]
+.for .. when
+----
+for 42, 43, "foo", 44, "bar" {
+    when Int { .say }
+    when /:i ^Bar/ { .say }
+    default  { say "Not an Int or a Bar" }
+}
+# OUTPUT: «42␤43␤Not an Int or a Bar␤44␤Bar␤»
+----
+
+[source,shell]
+----
+> for ('Swift', 'PHP', 'Python', 'Perl')  { .say if  Str }
+Nil
+> for ('Swift', 'PHP', 'Python', 'Perl')  { .say if  $_ ~~ Str }
+Swift
+PHP
+Python
+Perl
+
+for ('Swift', 'PHP', 'Python', 'Perl')  { .say when Str }
+Swift
+PHP
+Python
+Perl
+----
+
+列表解析：
+
+[source,perl6]
+.ord
+----
+(.ord when /7$/ for 1..99)
+----
+
+## when 和 if
+
+`when` 块类似于 `if` 块，并且其中一个或两个都可以在外部块中使用，它们也都具有“语句修饰符”形式。但是如何处理相同的外部块中的代码是有区别的：当执行 `when` 块时，控制被传递到封闭块并忽略后面的语句; 但是当执行 `if` 块时，执行以下语句。 （注意，还有其他方法可以修改其他部分中讨论的每个的默认行为。）以下示例应说明 `if` 或 `when` 块的默认行为，假设 `if` 或 `when` 块中不包含特殊退出或其他副作用语句：
+
+
+[source,perl6]
+.block
+----
+{
+    if X {...} # if X is true in boolean context, block is executed
+    # following statements are executed regardless
+}
+{
+    when X {...} # if X is true in boolean context, block is executed
+                 # and control passes to the outer block
+    # following statements are NOT executed
+}
+----
+
+如果上面的 `if` 和 `when` 块出现在文件范围内，则在每种情况下都会执行以下语句。
+
+有一个 `when` 有而 `if` 没有的功能：`when` 的布尔上下文测试默认为 `$_ ~~` 而 `if` 不是。这影响人们怎么在不带 `$_` 值的 `when` 块中使用 `X`
+（在那种情况下， 它是 `Any`，并且 `Any` 和 `True` 智能匹配：`Any ~~ True` 产生 `True` ）。请看下面的例子：
+
+[source,perl6]
+----
+{
+    my $a = 1;
+    my $b = True;
+    when $a    { say 'a' }; # no output
+    when so $a { say 'a' }  # a (in "so $a" 'so' coerces $a to Boolean context True
+                            # which matches with Any)
+    when $b    { say 'b' }; # no output (this statement won't be run)
+}
+----
+
+最后，`when` 的语句修饰符形式不影响如下语句在另一个块内部或外部的执行：
+
+[source,perl6]
+----
+say "foo" when X; # if X is true statement is executed
+                  # following statements are not affected
+----
+
+## 签名
+
+块的**默认签名**是一个名为 `$_` 的位置参数：
+
+[source,perl6]
+----
+my &block =  { 'oi' };
+&block.signature.say; # (;; $_? is raw)
+----
+
+[source,perl6]
+----
+my class Employee {
+   has Str $.name;
+   has Rat $.wage;
+}
+
+my $boss     = Employee.new( name => "Frank Myers"     , wage => 6755.85 );
+my $driver   = Employee.new( name => "Aaron Fast"      , wage => 2530.40 );
+my $worker   = Employee.new( name => "John Dude"       , wage => 2200.00 );
+my $salesman = Employee.new( name => "Frank Mileeater" , wage => 4590.12 );
+
+my @team = $boss, $driver, $worker, $salesman;
+
+say @team.sort({.wage} )».name;
+.name.say for @team.sort: {.wage};
+----
+
+块里面会默认有一个 `$_`：
+
+[source,perl6]
+----
+my $tiles := (< T S R E A N D >).Bag;
+my $total := $tiles.total;
+
+my @results = lazy '/usr/share/dict/SOWPODS'.IO.lines.grep: {
+    .chars ≤ $total &&
+    .substr(0, 1) ∈ $tiles &&
+    .comb.Bag ⊆ $tiles
+}
+
+for @results -> $word {
+    say $word;
+}
+
+say "\n" ~ "Found {@results.elems} words in {now - INIT now} seconds";
+----
