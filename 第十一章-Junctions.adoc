@@ -1,9 +1,28 @@
 
 == all
 
+查找当前目录下的所有以 `.md` 为后缀的文件:
+
+[source,perl6]
+----
+dir(test => all(/\.md$/))
+----
+
 == any
+
+[source,perl6]
+----
+my @bad_ext = ('plx', 'pm', 'pl', 'p6');
+my $file_ext = 'p6';
+if lc($file_ext) eq any(@bad_ext) {
+    say "$file_ext files is  allowed, You are a Perler";
+}
+----
 
 == none
 
+
+
 == one
+
 

@@ -911,11 +911,4 @@ my @n = (0, 1, -> $x, $y {$x + $y} ... Inf).grep({
 - 1. Perl 6 中的 `chdir('/')` 和 `＆*chdir('/')` 有什么区别？
 - 2. 解释下面的 Perl 6 代码并修改它以展示其优点：`.say for 1 ... **`。
 
-❄❄❄
-
-今天就这样了。 我希望你喜欢 Perl 6 的强大功能和表现力。今天，我们只谈到了一个 ASCII 字符。 想象一下，如果考虑到该语言在当今编程语言中提供了最好的 Unicode 支持，Perl 6 的 Universe 是多么的庞大。
-
-今天享受 Perl 6，并传播这个词！ 请继续关注 Perl 6 Advent Calendar; 更多的文章正在等待你的关注，明天就要来了。
-
-
-[Day 11 — All the Stars of Perl 6, or * ** *](https://perl6advent.wordpress.com/2017/12/11/all-the-stars-of-perl-6/)
+=== ❄❄❄

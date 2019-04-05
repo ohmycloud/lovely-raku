@@ -135,6 +135,32 @@ for %hhgttu -> (:$key, :$value) {
 for <Peter Paul Merry>.pairs -> (:key($index), :value($guest)) { }
 ----
 
+[source,pelr6]
+.hash deconstruction with pointy block
+----
+subset Seconds of Numeric;
+
+my regex number { \d+ [ '.' \d+ ]? } # float
+my regex suffix { <:alpha> } # 只匹配字母
+
+# 每天, 每小时, 每分钟, 每秒所对应的秒数
+my %unit-multipliers = 'd' => 60*60*24, 'h' => 60*60, 'm' => 60, 's' => 1;
+
+sub MAIN(*@timicles where .all ~~ /<number> <[dhms]>/) {
+    my Seconds $to-wait = @timicles»\
+        .match(/<number> <suffix>+/)».hash\
+        .map(-> %( Rat(Any) :$number, Str(Any) :$suffix) { %unit-multipliers{$suffix} * $number } )\
+        .sum;
+    say $to-wait ~ "s";    
+}
+----
+
+[source,shell]
+.timicles.pl6
+----
+perl6 timicles.pl6 1d 2h 3m 5s
+----
+
 对象解包为它们的属性只是默认行为. 要使对象以另外的方式解构, 要更改它的 link:https://docs.perl6.org/routine/Capture[Capture].
 
 

@@ -2,4 +2,150 @@
 
 == 散列排序
 
+使用 sort(-*.value) 根据散列值进行降序排列。
+
+[source,perl6]
+.descending sort based on the value of hash
+----
+my %hash = 'Perl'=>80,
+         'Python'=>75,
+           'Rust'=>95,
+            'Go'=>100,
+            "Php"=>88,
+           "Java"=>85;
+
+for %hash.sort(-*.value) -> (:$key, :$value) {
+    say $key, "\t", $value;
+}
+----
+
+`-> () { }` 结构用于解构签名, 它实际上等价于：
+
+[source,perl6]
+.descending sort based on the value of hash
+----
+for %hash.sort(-*.value) -> (:key($key), :value($value)) {
+    say $key, "\t", $value;
+}
+----
+
+还可以这样写：
+
+[source,perl6]
+----
+for %hash.sort(-*.value).kv -> $key, $value {
+    say $key, "\t", $value;
+}
+----
+
+
 == 对象排序
+
+[source,perl6]
+----
+# Sort an array of composite structures by a key. For example, if you define a composite structure that presents a name-value pair (in pseudocode):
+# Define structure pair such that:
+   # name as a string
+   # value as a string
+
+
+# and an array of such pairs:
+# x: array of pairs
+
+
+# then define a sort routine that sorts the array x by the key name.
+
+# This task can always be accomplished with Sorting Using a Custom Comparator. If your language is not listed here, please see the other article.
+
+# Works with: Rakudo Star version 2010.08
+
+my class Employee {
+   has Str $.name;
+   has Rat $.wage;
+}
+
+my $boss     = Employee.new( name => "Frank Myers"     , wage => 6755.85 );
+my $driver   = Employee.new( name => "Aaron Fast"      , wage => 2530.40 );
+my $worker   = Employee.new( name => "John Dude"       , wage => 2200.00 );
+my $salesman = Employee.new( name => "Frank Mileeater" , wage => 4590.12 );
+
+my @team = $boss, $driver, $worker, $salesman;
+
+my @orderedByName = @team.sort( *.name )».name;
+my @orderedByWage = @team.sort( *.wage )».name;
+
+say "Team ordered by name (ascending order):";
+say @orderedByName.join('  ');
+say "Team ordered by wage (ascending order):";
+say @orderedByWage.join('  ');
+
+# this produces the following output:
+# Team ordered by name (ascending order):
+# Aaron Fast   Frank Mileeater   Frank Myers   John Dude
+# Team ordered by wage (ascending order):
+# John Dude   Aaron Fast   Frank Mileeater   Frank Myers
+
+
+# Note that when the sort receives a unary function, it automatically generates an appropriate comparison function based on the type of the data.
+
+class Student {
+    has Str $.name;
+    has Int $.grade is rw;
+}
+
+my $stu1 = Student.new(name => "zhangwuji", grade => 124);
+my $stu2 = Student.new(name => "yangguo",   grade => 128);
+my $stu3 = Student.new(name => "zhaomin",   grade => 145);
+my $stu4 = Student.new(name => "sunyizhe",  grade => 145);
+my $stu5 = Student.new(name => "zhouziruo", grade => 128);
+my $stu6 = Student.new(name => "qiaofeng",  grade => 124);
+
+my @students = $stu1, $stu2,$stu3,$stu4,$stu5,$stu6;
+
+# classify 返回一个散列
+for @students.classify( *.grade ).sort -> $group {
+    say "These students got grade $group.key():";
+    say .name for $group.value.list;
+}
+
+# sort
+my @c = @students.sort: -> $a, $b {$a.grade <=> $b.grade};
+say @c.perl;
+----
+
+[source,perl6]
+----
+# 1 if $a is higher, -1 if $b is higher, 0 if equal
+$a <=> $b;
+
+# 根据分数排序 students
+@students.sort: -> $a, $b { $a.grade <=> $b.grade };
+
+# same thing
+@students.sort: { $^a.grade <=> $^b.grade };
+
+# same thing
+@students.sort: { .grade };
+
+# same thing
+@students.sort: *.grade;
+
+# leg gives -1, 0 or 1 according to lexicographic ordering
+# 'leg' is for Str, 'cmp' is now for type-agnostic sort
+$a leg $b;
+
+# sort students by name (Unicode order)
+@students.sort: { $^a.name leg $^b.name };
+
+# same thing
+@students.sort: *.name;
+
+# don't worry, things are properly cached; no re-evaluations
+@items.sort: *.expensive-calculation();
+
+# ...which means this works (and is a fair shuffle)
+@deck.sort: { rand }
+
+# ...but this is cuter :)
+@deck.pick(*);
+----

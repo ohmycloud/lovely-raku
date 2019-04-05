@@ -5,6 +5,17 @@
 
 == gather/take
 
+[source,perl6]
+----
+my @geese = ["African", "Roman Tufted", "Toulouse", "Pilgrim", "Steinbacher"] ;
+my @all = ["Mallard", "Hook Bill", "African", "Crested", "Pilgrim","Toulouse", "Blue Swedish"];
+my @r = gather for @all -> $a {
+    take $a if $a !(elem) @geese;
+}
+
+say @r;
+----
+
 == until
 
 == repeat

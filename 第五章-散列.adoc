@@ -1,3 +1,84 @@
 == 散列操作
 
+[source,perl6]
+----
+my %dev      = 'pugs'=>'audreyt', 'pct'=>'pm', "STD"=>'larry';
+my %same_dev = :rakudo('jnthn'), :testsuite('moritz');                      # 副词 (pair) 语法同样有效
+my %too_dev  = ('audreyt', 'pugs', 'pm', 'pct', 'larry', "STD");            # 在散列上下文中列表被自动转换
+my %compiler = Parrot => {Rakudo => 'jnthn'}, SMOP => {Mildew => 'ruoso'};  # 散列的散列 (HoH)
+
+# 散列切片
+my $name='pugs';
+my $value  = %dev{'pugs'};      # just give me the value related to that key, like in P5
+my $value1 = %dev<STD>;         # <> 自动引起
+my $value2 = %dev<<$name>>;     # same thing, just with eval
+
+my @values = %dev{'pugs', 'STD'};
+my @values2 = %dev<pugs STD>;
+my @values3 = %dev<<pugs STD $name>>;
+
+say %compiler<Parrot><Rakudo>; # 散列的散列中的值, 返回 'jnthn'
+say %compiler<SMOP>;           # 返回 Pair: Mildew => 'ruoso'
+
+# %dev   {'audrey'};        # 错误, 变量名和花括号(后环缀运算符)之间的空格不再被允许
+say %dev\  {'pugs'};        # 有效, unspace the space
+# %dev   .<dukeleto>;       # 错误
+say %dev\ .{'pugs'};        # 也有效, "long dot style", because its its an object in truth
+say %dev.{'pugs'};
+
+
+# Hash 方法
+say ? %dev;                    # bool 上下文, 如果该散列有任何 pair 对儿则为真
+say  + %dev;                   # numeric  上下文, 返回 pair 对儿的个数
+say ~ %dev;                    # string 上下文, 使用 \t 和 \n 格式化良好的含有2列的表
+
+
+
+say %dev.pairs;                # "pugs" => "audreyt" "pct" => "pm" "STD" => "larry"
+say %dev.antipairs;            # "larry" => "STD" "pm" => "pct" "audreyt" => "pugs"
+say %dev.elems;                # 和 + %dev 或 + %dev.pairs 一样  # 3
+say %dev.keys;                 # 返回一个包含所有键的列表
+say %dev.values;               # 返回一个包含所有值的列表
+say %dev.kv;                   # 展平为 key1, value1, key 2 ...
+say %dev.invert;               # 反转所有键 => 值关系
+
+my  @pairs = %dev;  
+say @pairs;                    # "pugs" => "audreyt" "pct" => "pm" "STD" => "larry"
+say %dev.push(@pairs);         # 插入一组 pair 对儿, 如果某个键已经出现在了 %dev 里, 那么该键的俩个值都会被添加到数组里
+# ("pugs" => ["audreyt", "audreyt"], "pct" => ["pm", "pm"], "STD" => ["larry", "larry"]).hash
+----
+
+== 散列解构
+
+你可以解构散列, 解构的语法是：
+
+[source,perl6]
+----
+%hash (:$key, :$value)
+----
+
+
+[source,perl6]
+----
+%hash (:key($variable-to-store-value-in))
+----
+
+如果你只对所要提取的值感兴趣, 那么散列甚至可以是匿名的:
+
+[source,perl6]
+----
+sub key-of(% (:value($val), :qua($qua))) {
+  say "Got val $val, $qua times.";
+}
+----
+
+[source,perl6]
+----
+# Then call it with a hash: (you need to keep the brackets for it to be a hash)
+key-of({value => 'foo', qua => 1});
+my %hash = value => 'Perl6', qua => '2019';
+key-of(%hash); # the same (for an equivalent `%hash`);
+----
+
+
 == 散列副词

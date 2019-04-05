@@ -1,19 +1,19 @@
 
 == $_ 变量
 
-`$_` 是主题变量。它是*没有显式签名的块*的默认参数，因此 `for @array {...}` 和 `given $var {...}` 这样的构造通过调用块绑定到 `$_`。
+`$\_` 是主题变量。它是*没有显式签名的块*的默认参数，因此 `for @array {...}` 和 `given $var {...}` 这样的构造通过调用块绑定到 `$_`。
 
 
 === for
 
 [source,perl6]
-.for
+.for automatically set topic variable if there is no explicit signature
 ----
 for <a b c> { say $_ }  # sets $_ to 'a', 'b' and 'c' in turn
 say $_ for <a b c>;     # same, even though it's not a block
 ----
 
-## given
+=== given
 
 [source,perl6]
 .given
@@ -70,7 +70,7 @@ given $employee {
 say $employee;
 ----
 
-## regex
+=== regex
 
 在方法上调用 `$_` 可以通过省略变量名来缩的更短：
 
@@ -79,7 +79,7 @@ say $employee;
 .say;                   # same as $_.say
 ----
 
-`m/regex/` 和 `/regex/` 正则匹配 `$_` 而 `s/regex/subst/` 替换作用于 `$_`：
+`m/regex/` 和 `/regex/` 正则匹配 `$\_` 而 `s/regex/subst/` 替换作用于 `$_`: 
 
 [source,perl6]
 ----
@@ -94,7 +94,7 @@ for <ab:c d$e fgh ij*> {
 #          ij*␤»
 ----
 
-## with/without
+=== with/without
 
 with 不引入块时也能设置 `$_` 主题变量：
 
@@ -118,7 +118,7 @@ orwith $s.index("c") { say "Found c at $_" }
 else                 { say "Didn't find a, b or c" }
 ----
 
-## when
+=== when
 
 `when` 语句使主题变量 `$_` 和所提供的表达式进行智能匹配，以使在指定匹配的时候能检查值、正则表达式和类型：
 
@@ -158,7 +158,7 @@ Perl
 (.ord when /7$/ for 1..99)
 ----
 
-## when 和 if
+=== when 和 if
 
 `when` 块类似于 `if` 块，并且其中一个或两个都可以在外部块中使用，它们也都具有“语句修饰符”形式。但是如何处理相同的外部块中的代码是有区别的：当执行 `when` 块时，控制被传递到封闭块并忽略后面的语句; 但是当执行 `if` 块时，执行以下语句。 （注意，还有其他方法可以修改其他部分中讨论的每个的默认行为。）以下示例应说明 `if` 或 `when` 块的默认行为，假设 `if` 或 `when` 块中不包含特殊退出或其他副作用语句：
 
@@ -202,7 +202,7 @@ say "foo" when X; # if X is true statement is executed
                   # following statements are not affected
 ----
 
-## 签名
+=== 签名
 
 块的**默认签名**是一个名为 `$_` 的位置参数：
 
@@ -228,6 +228,7 @@ my @team = $boss, $driver, $worker, $salesman;
 
 say @team.sort({.wage} )».name;
 .name.say for @team.sort: {.wage};
+say "The driver is {.name}" given $driver;
 ----
 
 块里面会默认有一个 `$_`：

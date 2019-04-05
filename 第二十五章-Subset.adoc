@@ -1,0 +1,90 @@
+== Subset
+
+- 限制字符串长度
+
+[source,perl6]
+----
+   subset NonEmptyString
+       of Str
+       where *.chars > 0; # 可以把约束条件写到多行
+
+   sub firstName(NonEmptyString $name) {
+       say "your name is $name";
+   }
+
+   firstName('Larry');
+   firstName('');
+----
+
+输出：
+
+[source,txt]
+----
+your name is Larry
+Constraint type check failed for parameter '$name'
+  in sub firstName at subset.p6:5
+  in block <unit> at subset.p6:10
+----
+
+- 限制值域
+
+[source,perl6]
+----
+subset PointLimit of Int where -10 <= * <= 10;
+sub test(PointLimit $number) {
+    say $number;
+}
+test(-5); # -5
+
+subset SmallInt of Int where -10 .. 10;
+sub small(SmallInt $number) {
+    say $number;
+}
+small(8);
+----
+
+
+- 检测密码是否合法
+
+[source,perl6]
+----
+# 安全的密码
+# 至少 8 位
+# 包含大写字母、小写字母
+# subset 不能使用 set(*.comb)  形式？
+
+subset Password 
+    of Str 
+    where *.chars >=8 && 
+        any('A'..'Z','a'..'z') ∈ *.comb.Set;
+
+sub passwordCheck(Password $password) {
+    say "Password is Valid";
+}
+
+passwordCheck("abcdABCD");
+----
+
+
+- 检测密码是否有效并提醒
+
+[source,perl6]
+----
+subset Length8    of Str where *.chars < 8;
+subset UpCase     of Str where none('A'..'Z') ∈ *.comb.Set;
+subset LowerCase  of Str where none('a'..'z') ∈ *.comb.Set;
+subset IntNumber  of Str where none('0'..'9') ∈ *.comb.Set;
+
+my $guess = prompt('Enter your password:');
+
+given $guess {
+    when Length8   { say '密码长度必须为 8 位 以上'; proceed }
+    when  UpCase   { say '密码必须包括大写字母';     proceed }
+    when LowerCase { say '密码必须包含小写字母';     proceed }
+    when IntNumber { say '密码必须包含数字';                 }
+}
+----
+
+
+该程序具有可扩展性， 要增加一种密码验证， 只有添加一个 subset 就好了，然后在 given/when 里面增加一个处理。
+proceed 相当于 continue， 不像 C 里面的 falling through， Perl 6 里面的 proceed 在继续执行 when 语句时会计算 when 后面的条件。
