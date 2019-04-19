@@ -486,6 +486,18 @@ key = value
 say ('abc' ~~ / a | .b /).Str;    # OUTPUT: «ab␤» 
 ----
 
+匹配一组单词中的任意一个, 就在正则表达式中写上那个数组名好了（以 `@` 开头）。默认地，这被插值为 `|` 备选分支（“**longest match**”），但是你也可以把他指定为 `||` 备选分支（“**first match**”）。
+
+[source,perl6]
+----
+my @a = <foo bar barkeep>;
+say "barkeeper" ~~ / @a /;     # ｢barkeep｣
+say "barkeeper" ~~ / |@a /;    # ｢barkeep｣
+say "barkeeper" ~~ / || @a /;  # ｢bar｣
+----
+
+其中 `/@a/` 和 `/|@a/` 是等价的, 都会被解析成 `/ foo | bar | barkeep /`; 而 `/|| @a/` 会被解析成 `/ foo || bar || barkeep /`。
+
 == 锚点
 
 正则表达式引擎尝试在字符串中从左至右地搜索来查找匹配。

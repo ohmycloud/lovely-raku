@@ -149,3 +149,179 @@ $a leg $b;
 # ...but this is cuter :)
 @deck.pick(*);
 ----
+
+== sort a list
+
+给定一个列表:
+
+[source,txt]
+----
+list = [ {'date': '2010-04-01','people': 1047, 'hits': 4522},  
+         {'date': '2010-04-03', 'people': 617, 'hits': 2582},  
+         {'date': '2010-04-02', 'people': 736, 'hits': 3277}
+       ]
+----
+
+[source,perl6]
+---- 
+# 根据日期进行排序
+
+# 降序
+my @sorted_des = @list.sort: { $^b.split('/')[2] leg $^a.split('/')[2] }
+say .key, "\n", .values for @sorted_des.classy(*.substr(7,7)).sort( { .key } )
+
+# 如果对想对生成的散列再做一下加工（计算每个月有多少天）
+# 就对生成的散列使用 map, 利用散列的键和值重新做一个映射
+say .key, " ", ~.values for @sorted_des.classy(*.substr(7,7)).map( {   .key => .value.elems  } ).sort( { .key } )
+say .key, " ", ~.values for @sorted_des.classy(*.substr(7,7)).map( { ; .key => .value.elems  } ).sort( { .key } )
+say .key, " ", ~.values for @sorted_des.classy(*.substr(7,7)).map( {   .key => .value.elems; } ).sort( { .key } )
+
+
+# 升序
+# @list.sort: { .split('/')[2] };
+# @list.sort: { $^a.split('/')[2] leg $^b.split('/')[2] }
+----
+
+[source,perl6]
+----
+my $a = ('a' .. 'z').roll(10000000);
+say .key, ' => ', .value for $a.cache.classify(*.Str).map({.key => .value.elems}).sort({-.value});
+say now - INIT now;
+----
+
+有多列数据, 序号, 学校, 课程 … 年份这几列。要如果学校和课程相同就根据年份倒序排列。
+
+先按学校排序, 再按课程排序, 然后按年份倒序排序。
+
+我定义一个类来进行多列数据的排序, 很方便：
+
+[source,perl6]
+----
+class Course {
+  has Int $.numb;
+  has Str $.univ;
+  has Str $.dis;
+  has Int $.paper;
+  has Int $.cited;
+  has Int $.year;
+}
+
+my @headers = <numb univ dis paper cited year>;
+my @courses;
+
+for $=finish.lines -> $line {
+  next if $line ~~ /^num/;
+  my @words  = $line.words;
+  @words[0, 3,4,5] = @words[0,3,4,5]».Int;
+  my %h =  @headers Z=> @words;
+  my $course = Course.new(|%h);
+  @courses.push($course);
+}
+
+my @sorted  = @courses.sort(*.univ).sort(*.dis).sort(-*.year);
+for @sorted  {
+  say join " ", .numb, .univ, .dis, .paper, .cited, .year;
+}
+
+=finish
+num univ    dis paper   cited   year
+1   Beijing Physics 193 4555    2005
+2   Beijing Physics 197 2799    2006
+3   Beijing Physics 240 2664    2007
+4   Beijing Physics 200 3191    2008
+5   Beijing Physics 268 2668    2009
+6   Beijing Physics 249 2300    2010
+7   Beijing Physics 262 2080    2011
+8   Beijing Physics 230 2371    2012
+9   Beijing Physics 309 1367    2013
+10  Beijing Physics 284 615 2014
+11  Beijing Chemistry   143 1650    2005
+12  Beijing Chemistry   149 2379    2006
+13  Beijing Chemistry   190 2566    2007
+14  Beijing Chemistry   147 1888    2008
+15  Beijing Chemistry   184 2146    2009
+16  Beijing Chemistry   214 2568    2010
+17  Beijing Chemistry   238 2874    2011
+18  Beijing Chemistry   265 2097    2012
+19  Beijing Chemistry   251 1303    2013
+20  Beijing Chemistry   241 656 2014
+----
+
+输出:
+
+[source,txt]
+.Output
+----
+20 Beijing Chemistry 241 656 2014
+10 Beijing Physics 284 615 2014
+19 Beijing Chemistry 251 1303 2013
+9 Beijing Physics 309 1367 2013
+18 Beijing Chemistry 265 2097 2012
+8 Beijing Physics 230 2371 2012
+17 Beijing Chemistry 238 2874 2011
+7 Beijing Physics 262 2080 2011
+16 Beijing Chemistry 214 2568 2010
+6 Beijing Physics 249 2300 2010
+15 Beijing Chemistry 184 2146 2009
+5 Beijing Physics 268 2668 2009
+14 Beijing Chemistry 147 1888 2008
+4 Beijing Physics 200 3191 2008
+13 Beijing Chemistry 190 2566 2007
+3 Beijing Physics 240 2664 2007
+12 Beijing Chemistry 149 2379 2006
+2 Beijing Physics 197 2799 2006
+11 Beijing Chemistry 143 1650 2005
+1 Beijing Physics 193 4555 2005
+----
+
+== sort array of array
+
+我需要对数组的数组进行排序， `.sort` 方法能不能按照内层数组的不同索引来排序呢？
+
+要排序的数组在一个更大的数组的外面：（birthday 是 'mmddyy' 格式的：）
+
+[source,perl6]
+----
+my @allRecords = [ [birthday1 firstName1 lastName1 [data1]
+                   [birthday2 firstName2 lastName2 [data2] 
+                   ...
+                   [birthdayN firstNameN lastNameN [dataN] ];
+
+@allRecords.sort by itself sorts by birthdays.
+----
+
+有什么好方法能按照 firstName 或 lastName 或按照内层数组里面的数据来排序呢？
+
+`sort` 方法接受一个link: https://docs.perl6.org/routine/sort#(List)_routine_sort[可选的 sub 参数]。如果元数是 1， 那么它使用返回值作为比较操作数；如果元数为 2， 那么你可以在两个元素之间手动作比较，两个元素的比较会返回 `Less`, `Same`, `More`。
+
+拿你上面的例子来说，我们可以像这样按照 first name 进行排序：
+
+[source,perl6]
+----
+@allRecords.sort(*.[1])
+----
+
+`*.[1]` 和 `*[1]` 没有任何区别, 只是前者更易读。
+
+我们可以先按照 last name 再按照 first name 进行排序，然后按照 birthday 来做单独的比较，就像这样：
+
+[source,perl6]
+----
+@allRecords.sort(-> $a,$b {
+    $a[2] cmp $b[2] || $a[1] cmp $b[1] || $a[0] cmp $b[0]
+});
+----
+
+或者再次通过转换操作数：
+
+[source,perl6]
+----
+@allRecords.sort(*.[2...0]);
+----
+
+你可以按照 lastname，firstname， birthday 这样的顺序排序：
+
+[source,perl6]
+----
+@a.sort: *[2...0]
+----

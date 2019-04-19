@@ -88,3 +88,17 @@ given $guess {
 
 该程序具有可扩展性， 要增加一种密码验证， 只有添加一个 subset 就好了，然后在 given/when 里面增加一个处理。
 proceed 相当于 continue， 不像 C 里面的 falling through， Perl 6 里面的 proceed 在继续执行 when 语句时会计算 when 后面的条件。
+
+- 检测年龄
+
+[source,perl6]
+----
+class Person {
+    has Int $.age;
+    has Str $.name;
+}
+
+subset Child  of Person where *.age < 18;
+subset Adult  of Person where -> $person { 18 <= $person.age < 60 };
+subset Senior of Person where *.age >= 60;
+----

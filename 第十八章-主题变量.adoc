@@ -150,6 +150,12 @@ Python
 Perl
 ----
 
+[source,perl6]
+.for/when
+----
+for (12, 24, 56, 42) {.say when *>40 }
+----
+
 列表解析：
 
 [source,perl6]

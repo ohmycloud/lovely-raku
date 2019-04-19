@@ -616,6 +616,10 @@ $present.*giver.join(', ').say; # Santa Claus, parents
 
 ==== 10. Whatever
 
+Whatever 是什么呢? Placeholder for unspecified value/parameter - 未指定的值/参数的占位符。
+
+`*` 字面量在 「项」 的位置上创建 「Whatever」 对象。
+
 单个星号 `*` 能表示任何东西(`Whatever`)。 `Whatever` 在 Perl 6 中是一个预定义好的类, 它在某些有用的场景下引入了一些规定好的行为。
 
 例如，在范围和序列中，最后的 `*` 表示无穷大。 我们今天已经看到了一个例子。 这是另一个：
@@ -708,9 +712,138 @@ echo(*);    # *
 
 现在我们正处在一个四两拨千斤的节骨眼上。
 
+.Table Whatever
+
+|===
+| 例外 | 例子 | 它是做什么的? 
+
+| 逗号
+| 1,*,2
+| 用一个 * 元素生成一个 Parcel
+
+| 范围运算符
+| 1..*
+| Range.new(:from(1), :to(*))
+
+| 序列运算符
+| 1 ... *
+| 无限列表
+
+| 智能匹配
+| 1 ~~ * 
+| 返回 True
+
+| 赋值
+| my $x = *
+| 把 * 赋值给 $x
+
+| 绑定
+| my $x := *
+| 把 * 绑定给 $x
+
+| 列表复制
+| 1 xx *
+| 生成无限列表
+
+| 字符串复制
+| my $str = '-' x *
+| 生成字符串模板
+
+|===
+
+注意不能使用嵌套的闭包:
+
+[source,perl6]
+----
+(1..5).map: { * ** 2 }
+----
+
+[source,txt]
+----
+===SORRY!=== Error while compiling:
+Malformed double closure; WhateverCode is already a closure without curlies, so either remove the curlies or use valid parameter syntax instead of *
+at line 2
+------> <BOL>⏏<EOL>
+----
+
+注意上面的错误信息, 说的已经很明显了, WhateverCode 已经是一个不带花括号的闭包了, 所以要么移除花括号, 要么使用合法的参数语法代替 `*` 号, 提示信息足够清楚了。所以, 按照提示:
+
+方法一: 使用 `$_` 代替 `*` 号
+
+[source,perl6]
+----
+(1..5).map: { $_ ** 2 }
+----
+
+方法二: 移除花括号
+
+[source,perl6]
+----
+(1..5).map:  * ** 2
+----
+
+方法三: 显式的使用闭包
+
+[source,perl6]
+----
+(1..5).map: -> $item { $item ** 2 }
+----
+
 ==== 11. WhateverCode
 
-最后, 我们来谈谈 `WhateverCode`。
+最后, 我们来谈谈 `WhateverCode`。`*` 的大部分魔法来自于 「Whatever 柯里化」. 当 `*` 作为项与很多运算符组合使用时, 编译器会把表达式转换为 「WhateverCode」 类型的闭包.
+
+[source,perl6]
+----
+my $c = * + 2;          # 等价于 my $c = -> $x { $x + 2 };
+say $c(4);              # 6
+say $c.WHAT             # (WhateverCode)
+----
+
+`my $c = -> $x { $x + 2 }` 中, `$c` 是一个 link:https://docs.perl6.org/type/Block[Block]
+
+如果一个表达式中有 N 个 `*`, 则会产生一个含有 N 个参数的闭包:
+
+[source,perl6]
+----
+my $c = * + *;          # 等价于 my $c = -> $x, $y { $x + $y }
+----
+
+在复杂的表达式中使用 `*` 也会产生闭包:
+
+[source,perl6]
+----
+my $c = 4 * * + 5;      # 等价于 my $c = -> $x { 4 * $x + 5 }
+----
+
+在 `*` 号身上调用方法也会产生闭包:
+
+[source,perl6]
+----
+<a b c>.map: *.uc;     # 等价于 <a b c>.map: -> $char { $char.uc }
+----
+
+Whatever 最强大的用处是 「Whatever」 闭包。
+
+对于 Whatever 没有特殊意义的普通操作符：把 Whatever 当作参数传递时就创建了一个闭包！ 所以，举个例子：
+
+[source,perl6]
+----
+* + 1 # 等价于 -> $a { $a + 1 }
+* + * # 等价于 -> $a, $b { $a + $b }
+----
+
+[source,perl6]
+----
+@list.grep(* > 10)                  # 返回 @list 数组中所有大于 10 的元素
+@list.grep( -> $e { $e > 10 } )     # 同上, 使用显式的闭包
+@list.grep: -> $e { $e > 10 }       # 同上, 使用冒号调用方式
+@list.grep: * > 10                  # 同上
+@list.grep: { $_ > 10 }             # 同上
+
+@list.map(* + *)                    # 返回 @list 数组中每两个元素的和
+@list.map( -> $a, $b { $a+$b } )    # 同上, 使用显式的闭包
+----
 
 取一个数组然后打印出它的最后一个元素。如果你使用 Perl 5 的风格来做, 你会键入 `@a[-1]` 那样的东西。在 Perl 6 中, 那会产生错误:
 
@@ -728,6 +861,27 @@ use a function such as *-1
 ----
 say (*-1).WHAT; # (WhateverCode)
 ----
+
+如果给 `@a[ ]` 的方括号里面传递一个闭包， 它会把 `@a` 数组的元素个数作为参数传递并计算！
+
+数组的最后一个元素:
+
+[source,perl6]
+----
+my @a =  1,22,33,11;
+say @a[*-1];
+say @a[->$a {$a-1}]; # $a  即为数组@a 的元素个数
+----
+
+数组的倒数第二个元素
+
+[source,perl6]
+----
+say @a[*-2];
+say @a[->$a {$a-2}];
+----
+
+所以 `@a[*/2]` 是 `@a` 数组的中间元素, `@a[1..*-2]` 是 `@a` 中不包含首尾元素的其它元素。
 
 现在, 打印数组的后半部分:
 

@@ -1,0 +1,325 @@
+== zip
+
+输出下面的文本:
+
+[source,perl6]
+----
+# OUTPUT
+What is your name?  It is lancelot.
+What is your quest?  It is the holy grail.
+What is your favorite color?  It is blue.
+----
+
+[source,perl6]
+----
+my @questions = ('name', ' quest',  'favorite color');
+my @answers = ("lancelot", "the holy grail", "blue");
+for zip(@questions, @answers) -> ($question, $answer) {
+    say "What is you $question?  It is $answer";
+}
+----
+
+给定一个列表，按照日期字符串进行排序:
+
+[source,txt]
+----
+list = [ {'date': '2010-04-01','people': 1047, 'hits': 4522},  
+         {'date': '2010-04-03', 'people': 617, 'hits': 2582},  
+         {'date': '2010-04-02', 'people': 736, 'hits': 3277}
+       ]
+----
+
+== «
+
+[source,perl6]
+----
+my @days = Date.new('2019-04-01') .. Date.new('2019-04-10');
+.say for "/perl6/" «~« @days;
+----
+
+== feed 
+
+=== infix ==>
+
+[source,perl6]
+----
+# Traditional structure, read bottom-to-top
+my @result =
+    sort               # (4) Sort, result is <Earth People>
+    grep { /<[PE]>/ }, # (3) Look for P or E
+    map { .tc },       # (2) Capitalize the words
+    <people of earth>; # (1) Start with the input
+
+# Feed (left-to-right) with parentheses, read top-to-bottom
+@result = (
+    <people of earth>  # (1) Start with the input
+    ==> map({ .tc })   # (2) Capitalize the words
+    ==> grep /<[PE]>/  # (3) Look for P or E
+    ==> sort           # (4) Sort, result is <Earth People>
+);
+
+# For illustration, method chaining equivalent, read top-to-bottom
+@result =
+    <people of earth>  # (1) Start with the input
+    .map({ .tc })      # (2) Capitalize the words
+    .grep(/<[PE]>/)    # (3) Look for P or E
+    .sort;             # (4) Sort, result is <Earth People>
+
+# To assign without the need of parentheses use another feed operator
+<people of earth>
+    ==> map({ .tc })
+    ==> grep /<[PE]>/
+    ==> sort()
+    ==> @result;
+
+# It can be useful to capture a partial result, however, unlike
+# the leftward feed operator, it does require parentheses or a semicolon
+<people of earth>
+    ==> map({ .tc })
+    ==> my @caps; @caps # also could wrap in parentheses instead
+    ==> grep /<[PE]>/
+    ==> sort()
+    ==> @result;
+----
+
+这个流操作符能让你在例程之外构建方法链那样的模式并且方法的结果能在不相关的数据上调用。在方法链中, 你被限制于使用数据身上可用的方法或使用之前的方法调用的结果。使用流操作符, 那个限制没有了。写出来的代码比一系列用多个换行符打断的方法调用更加可读。
+
+注: 在将来, 这个操作符会在它获得并行地运行列表操作的能力之后有所变化。它会强制左侧的操作数作为一个闭包(它能被克隆并运行在子线程中)变得可闭合。
+
+=== infix <==
+
+这个向左的流操作符从右侧接收结果并把结果作为最后的一个参数传递给它前面的(左侧的)例程。这为一系列列表操作函数阐明了从右到左的数据流。
+
+[source,perl6]
+----
+# Traditional structure, read bottom-to-top
+my @result =
+    sort                   # (4) Sort, result is <Earth People>
+    grep { /<[PE]>/ },     # (3) Look for P or E
+    map { .tc },           # (2) Capitalize the words
+    <people of earth>;     # (1) Start with the input
+
+# Feed (right-to-left) with parentheses, read bottom-to-top
+@result = (
+    sort()                 # (4) Sort, result is <Earth People>
+    <== grep({ /<[PE]>/ }) # (3) Look for P or E
+    <== map({ .tc })       # (2) Capitalize the words
+    <== <people of earth>  # (1) Start with the input
+);
+
+# To assign without parentheses, use another feed operator
+@result
+    <== sort()             # (4) Sort, result is <Earth People>
+    <== grep({ /<[PE]>/ }) # (3) Look for P or E
+    <== map({ .tc })       # (2) Capitalize the words
+    <== <people of earth>; # (1) Start with the input
+
+# It can be useful to capture a partial result
+@result
+    <== sort()
+    <== grep({ /<[PE]>/ })
+    <== my @caps # unlike ==>, there is no need for additional statement
+    <== map({ .tc })
+    <== <people of earth>;
+----
+
+和向右的流操作符不一样, 这个结果不能严格地映射为方法链。然而, 和上面传统的结构中每个参数使用一行分割相比, feed 操作符写出的代码比逗号更具描述性。向左的流操作符也允许你打断语句并捕获一个可能对调试来说极其方便的中间结果或者接收那个结果并在最终结果身上创建另外一个变种。
+
+注意: 在将来, 这个操作符会在它获得并行地运行列表操作的能力之后有所变化。它会强制右侧的操作数作为一个闭包变得可闭合(它能被克隆并运行在子线程中)
+
+== 超运算符
+
+超运算符与子例程
+
+[source,perl6]
+----
+my @a = <1 2 3 4>;
+sub by2($n){
+    return 2*$n;
+}
+
+sub power2($n) {
+    return $n ** 2;
+}
+my @b = @a«.&by2«.&power2;
+say @b; # 4 16 36 64
+----
+
+为什么是 `&function` 呢：
+
+the name of the by2 function is &by2, just as the name of the foo scalar is $foo and the name of the foo array is @foo
+
+- 生成 IP 地址范围
+
+[source,perl6]
+----
+.say for "192.168.10." «~» (0..255).list
+----
+
+- 生成 OC 中的测试数组
+
+[source,perl6]
+----
+.say for "@" «~» '"Perl' «~»  (1..5).list «~» '",'
+----
+
+输出:
+
+[source,txt]
+.Output
+----
+@"Perl1",
+@"Perl2",
+@"Perl3",
+@"Perl4",
+@"Perl5",
+----
+
+我想以AGCT4种字母为基础生成字符串。
+
+比如希望长度为1，输出A,G,C,T。
+如果长度为2，输出AA,AG,AC,AT,GA,GG,GC,GT,CA,CG,CC,CT,TA,TG,TC,TT。这样的结果。
+
+[source,perl6]
+----
+my @a=<A G C T>;
+my $x=@a;  # 或者使用 $x =@('A','G','C','T')
+for 1 ...^ * -> $a {(([X~] $x xx $a)).join(',').say;last if $a==4;}
+----
+
+== Z
+
+`Z` 像一个拉链那样把列表插入进来， 只要第一个输入列表耗尽就停止：
+
+[source,perl6]
+----
+say (1, 2 Z <a b c> Z <+ ->).perl;  # ((1, "a", "+"), (2, "b", "-")).list
+----
+
+`Z` 操作符也作为元操作符存在， 此时内部的 parcels 被应用了元操作符的列表替换：
+
+[source,perl6]
+----
+say 100, 200 Z+ 42, 23;
+say 1..3 Z~ <a b c> Z~ 'x' xx 3;
+----
+
+输出:
+
+[source,txt]
+.Output
+----
+142, 223
+1ax 2bx 3cx
+----
+
+== X
+
+`X` 从所有列表创建一个外积。最右边的元素变化得最迅速。
+
+[source,perl6]
+----
+1..3 X <a b c> X 9
+----
+
+输出:
+
+[source,txt]
+----
+((1 a 9) (1 b 9) (1 c 9) (2 a 9) (2 b 9) (2 c 9) (3 a 9) (3 b 9) (3 c 9))
+----
+
+`X` 操作符也可以作为元操作符， 此时内部的 parcels 被应用了元操作符的列表的值替换：
+
+[source,perl6]
+----
+1..3 X~ <a b c> X~ 9
+----
+
+输出:
+
+[source,txt]
+----
+(1a9 1b9 1c9 2a9 2b9 2c9 3a9 3b9 3c9)
+----
+
+== infix ...
+
+序列操作符是一个用于产生惰性列表的普通操作符。
+
+它可以有一个初始元素和一个生成器在 ... 的左侧， 在右侧是一个端点。
+
+序列操作符会使用尽可能多的参数来调用生成器。参数会从初始元素和已生成元素中获取。
+
+默认的生成器是 `*.succ` 或 `*.pred` ， 取决于末端怎么比较：
+
+[source,perl6]
+----
+say 1 ... 4;        # 1 2 3 4
+say 4 ... 1;        # 4 3 2 1
+say 'a' ... 'e';    # a b c d e
+say 'e' ... 'a';    # e d c b a
+----
+
+`*` (Whatever) 末端生成一个无限序列，使用的是默认的生成器 `*.succ`。
+
+[source,perl6]
+----
+say (1 ... *)[^5];  # 1 2 3 4 5
+----
+
+自定义生成器是在 `...` 操作符之前的最后一个参数。下面这个自定义生成器接收两个参数， 生成了斐波纳契数。
+
+[source,perl6]
+----
+say (1, 1, -> $a, $b { $a + $b } ... *)[^8];    # 1 1 2 3 5 8 13 21
+# same but shorter
+say (1, 1, *+* ... *)[^8];                      # 1 1 2 3 5 8 13 21
+----
+
+当然自定义生成器也能只接收一个参数。
+
+[source,perl6]
+----
+say 5, { $_ * 2 } ... 40;                       # 5 10 20 40
+----
+
+生成器的参数个数至少要和初始元素的个数一样多。
+
+如果没有生成器，并且有不止一个初始元素，所有的初始元素都是数值，那么序列操作符会尝试推导出生成器。它知道数学和几何序列。
+
+[source,perl6]
+----
+say 2, 4, 6 ... 12;     # 2 4 6 8 10 12
+say 1, 2, 4 ... 32;     # 1 2 4 8 16 32
+----
+
+如果末端不是 `*`， 它会和每个生成的元素进行智能匹配，当智能匹配成功的时候序列就被终止。对于 `...` 操作符， 会包含最后一个元素， 对于 `...^` 操作符，会排除最后的那个元素。
+
+这允许你这样写：
+
+[source,perl6]
+----
+say 1, 1, *+* ...^ *>= 100;
+----
+
+来生成所有直到 100 但不包括 100 的斐波纳契数。
+
+`...` 操作符还会把初始值看作”已生成的元素”，所以它们也会对末端进行检查：
+
+[source,perl6]
+----
+my $end = 4;
+say 1, 2, 4, 8, 16 ... $end;
+# outputs 1 2 4
+----
+
+== ...
+
+- 计算哪些日子是周六：
+
+[source,perl6]
+----
+enum DoW < Sunday Monday Tuesday Wednesday Thursday Friday Saturday >;
+say (Date.new("2019-01-01")..Date.new("2019-12-31")).grep( *.day-of-week == Saturday );
+----

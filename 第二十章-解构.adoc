@@ -92,20 +92,45 @@ sub myfunc(%h (Int :$a, Str :$b, Rat :$c)) {...}
 [source,perl6]
 .first element of array using destructuring
 ----
-sub first(@array ($first, *@rest) ) { $first }
+sub first( @array ($first, *@rest) ) { $first }
+sub first(     *@ [$first, *@]     ) { $first }
+sub first(        [$first, *@]     ) { $first }
 ----
 
-很神奇吧, 你不用在函数体里面写出 `first` 函数的逻辑, 你只使用子签名, 就自动获得了获取列表首元素的逻辑.
+很神奇吧, 你不用在函数体里面写出 `first` 函数的逻辑, 你只使用子签名, 就自动获得了获取列表首元素的逻辑。
 
 [source,perl6]
-.first element of array using destructuring
+.tail elements of array using destructuring
 ----
-sub first([$first, *@]) { $first }
+sub tail( @array ($first, *@tail) ) { @tail }
+sub tail(     *@ [$,      *@tail] ) { @tail }
+sub tail(        [$,      *@tail] ) { @tail }
 ----
+
+外部参数是可以是匿名的 (`@`)。匿名参数可以省略。
 
 === 散列解构
 
 散列的解构是它的 pairs:
+
+[source,perl6]
+----
+multi key-type ($ (Numeric :$key, *%)) { "Number" }
+multi key-type ($ (Str     :$key, *%)) { "String" }
+for (42 => 'a', 'b' => 42) -> $pair {
+    say key-type $pair;
+}
+----
+
+输出:
+
+[source,txt]
+----
+Number
+String
+----
+
+因为 `=>` 构造了一个 link:http://doc.perl6.org/type/Pair[Pair]，它有一个 `key` 和一个 `value` 属性。子签名中的 `:$key` 命名参数提取属性 `key`。 `*%` 中的 `%` 是匿名的, `*%` 接收所有剩余参数到一个匿名散列中, 不予使用。
 
 [source,perl6]
 .anonymous hash deconstruction
@@ -242,6 +267,33 @@ my @booklist =
 for @booklist -> Book $b (:$title,:$author, :$count, :@tags) {
     say "$title, $author, $count, @tags[]";
 }
+----
+
+
+再看一个例子:
+
+[source,perl6]
+----
+class body { has ( $.head, @.arms, @.legs ) } # Declare a class (object structure).
+class person { has ( $.mom, $.body, $.age ) } # And another that includes first.
+
+multi person's-age-and-legs                   # Declare a function that matches ...
+  ( person                                    # ... a person ...
+    ( :$age where * > 40,                     # ... whose age is over 40 ...
+      :$body ( :@legs, *% ),                  # ... noting their body's legs ...
+      *% ) )                                  # ... and ignoring other attributes.
+  { say "$age {+@legs}" }                     # Display age and number of legs.
+  
+my $age = 42;                                 # Let's demo handy :$var syntax below.
+person's-age-and-legs                         # Call function declared above ...
+  person                                      # ... passing a person.
+    .new:                                     # Explicitly construct ...
+      :$age,                                  # ... a middle aged ...
+      body => body.new:
+        :head,
+        :2arms,
+        legs => <left middle right>           # ... three legged person.
+# Displays "42 3"
 ----
 
 如果您想检查类型或定义，或设置默认值，您都可以在签名中正确地执行。 如果您不喜欢对象属性的名称，则可以使用别名来重命名它们, 你开心就行。

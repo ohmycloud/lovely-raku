@@ -13,7 +13,7 @@ given $name {
 ----
 
 
-### 同时检查名字和密码
+=== 同时检查名字和密码
 
 [source,perl6]
 .given/when and tuple
@@ -29,7 +29,7 @@ given ($name, $password) {
 ----
 
 
-### 使用单个元组
+=== 使用单个元组
 
 [source,perl6]
 .given/when and tuple
@@ -44,7 +44,7 @@ given $authentication {
 ----
 
 
-### 部分匹配
+=== 部分匹配
 
 你只关心某些感兴趣的值，不关心其它值，使用 `*` 号或 `$` 来代表 "any value is fine"
 
@@ -60,7 +60,7 @@ given $authentication {
 ----
 
 
-### 只匹配元组的一部分
+=== 只匹配元组的一部分
 
 但仍然想知道其它部分是什么
 
@@ -75,7 +75,7 @@ given $authentication {
 ----
 
 
-### 匹配计算型元组
+=== 匹配计算型元组
 
 [source,perl6]
 .given/when and computational tuple
@@ -93,7 +93,7 @@ say fizzbuzz(15);
 ----
 
 
-### 遍历元组
+=== 遍历元组
 
 
 [source,perl6]
@@ -108,7 +108,7 @@ for @users -> $user {
 }
 ----
 
-### 使用 when 匹配元组中的指定值
+=== 使用 when 匹配元组中的指定值
 
 
 [source,perl6]
@@ -126,7 +126,7 @@ say "User $_[0] has password \"fr0st1es\"" when (*, "fr0st1es") for @users;
 ----
 
 
-### 匹配范围
+=== 匹配范围
 
 
 [source,perl6]
@@ -142,7 +142,7 @@ given $age {
 ----
 
 
-### when 可以配合智能匹配操作符 ~~ 单独使用
+=== when 可以配合智能匹配操作符 ~~ 单独使用
 
 
 [source,perl6]
@@ -154,7 +154,7 @@ when $age ~~ 18 ..^ 70 { say "你有活力有钱，但是没时间"  }
 default                { say "你有时间和金钱，但是没活力"}
 ----
 
-### 使用 contains 方法
+=== 使用 contains 方法
 
 [source,perl6]
 .when/contains
@@ -165,7 +165,7 @@ when (18 ..^ 70).contains($age) { say "你有活力有钱，但是没时间"  }
 default                         { say "你有时间和金钱，但是没活力"}
 ----
 
-### 匹配元组中的范围
+=== 匹配元组中的范围
 
 
 [source,perl6]
@@ -181,7 +181,7 @@ given $user {
 ----
 
 
-### 枚举
+=== 枚举
 
 
 [source,perl6]
@@ -206,7 +206,7 @@ if $today ~~ WeatherType::Cloudy { say "多云" }
 ----
 
 
-### 关联值
+=== 关联值
 
 [source,perl6]
 .given/when and enum with associated value
@@ -226,7 +226,7 @@ given $today {
 ----
 
 
-### when 从句
+=== when 从句
 
 [source,perl6]
 .when/for clause

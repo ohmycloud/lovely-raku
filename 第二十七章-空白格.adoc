@@ -1,0 +1,227 @@
+
+空白要么是一个字符, 要么是一组空白字符，用于分隔单词。一个例子是空格字符 `« »`。
+
+
+== 关键字后面必须有空白
+
+在 Perl 6 中, 关键字后面必须要有空白, 否则会被当成是方法调用。
+
+[source,perl6]
+----
+while ($x < 5) { ... } 
+if $x < 5 { ... }
+my ($x, $y)
+----
+
+而大部分括号都可以省略
+
+[source,perl6]
+----
+while $x < 5 { ... }
+if $x < 5 { ... }
+----
+
+== 中缀运算符前面必须有空白
+
+中缀运算符, 例如 `<`, 如果你想使用该运算符比较数值大小, 但是忘了在该中缀运算符前面加上空白, 那么编译器就会告诉你, *Whitespace required before < operator*:
+
+[source,shell]
+----
+3<1
+----
+
+[source,txt]
+----
+===SORRY!=== Error while compiling:
+Whitespace required before < operator
+at line 2
+------> <BOL>⏏<EOL>
+    expecting any of:
+        postfix
+----
+
+== 链式调用允许有空白
+
+[source,perl6]
+----
+my @books = $xml
+  .parse-file($file)           # some comment 
+  .findnodes("/library/book");
+----
+
+== 名词和后缀运算符之间不能有空白
+
+[source,perl6]
+----
+%hash  {$key}  # WRONG
+@array [$ix]   # WRONG
+$subref ($arg) # WRONG
+----
+
+== [+] 里面的中缀运算符前后都不允许有空白
+
+[source,perl6]
+----
+[+] 1,2,3 # 6
+----
+
+如果改成 `[ +]` 或 `[ + ]` 或 `[ + ]` 都不行：
+
+[source,txt]
+----
+===SORRY!=== Error while compiling:
+Prefix +  requires an argument, but no valid term found
+----
+
+== unspace
+
+通过在空白处放置一个 `/`, 任何连续的空白(包括注释)都会在解释器面前隐身, 这就是所谓的空白隐身(unspace)。
+
+使用 `unspace` 可以把后缀运算符贴线对齐:
+
+[source,perl6]
+----
+%hash\  {$key}
+@array\ [$ix]
+$subref\($arg)
+----
+
+上面的最后一种形式是一种退化了的 `unspace`, 即反斜线后面直接跟着后缀。注意, 反斜线前面不允许有空白, 所以:
+
+[source,perl6]
+----
+$subref \($arg)
+----
+
+是语法错误(two terms in a row)。其它后缀运算符也可以使用 `unspace`:
+
+[source,perl6]
+----
+$number\  ++;
+$number\  --;
+1+3\      i;
+$object\  .say();
+$object\#`{ your ad here }.say
+----
+
+`unspace` 只是让空白在解释器面前隐身了, 但是它并不能使空白在词法分析程序面前隐身, 因为 `token` 中禁用了 `unspace`。
+
+== 正则中的空白
+
+我们知道, 在 Perl 6 里面, 正则表达式有 **regex**, **token** 和 **rule** 三种声明方式:
+
+[source,perl6]
+----
+my regex named-regex { ... }
+my token named-regex { ... }
+my rule  named-regex { ... }
+----
+
+而 `token` 和 `rule` 是 `regex` 的变体。
+
+|====
+| 声明 | 空白 | 回溯 | 等价写法
+
+| regex 
+| 
+| 
+| 
+
+| token
+|
+| :ratchet
+| regex :ratchet { ... }
+
+| rule
+| :sigspace
+| :ratchet
+| regex :ratchet :sigspace { ... }
+
+|====
+
+`regex` 和 `token` 默认忽略空白, `rule` 默认不忽略空白。`:sigspace` 表示空白是有意义的, `:ratchet` 表示不回溯。因此, 要在 `regex` 或 `token` 中里面匹配空白, 你需要显式的写上 `\s`、`\h`、`\n` 等空白字符。
+
+=== 原子与空白
+
+在 `rule` 中, 任何跟在原子(atom)后面的空白都会变成非捕获的 `<ws>` 调用, 即 `<.ws>`。因此, 
+
+[source,perl6]
+----
+rule entry { <key> '=' 'value' }
+----
+
+等价于:
+
+[source,perl6]
+----
+token entry { <key> <.ws> '=' <.ws> <value> <.ws> } # 点号抑制了捕获
+----
+
+=== :sigspace 修饰符
+
+在正则表达式中, *:s* 是 *:sigspace* 的简写, 该修饰符使普通 regex 中的空白变得有意义:
+
+[source,perl6]
+----
+my $ingredients = 'eggs milk sugar ';
+$ingredients ~~ m/:s eggs milk sugar /;
+----
+
+=== 字符类中的空白
+
+在字符类中, 空白字面量会被忽略:
+
+[source,perl6]
+----
+/ <[ a .. z _ ]>* /
+/ <[ . _ ]>* /
+/ <[a..z] - [aeiou] + xdigit> /  # 辅音或十六进制数
+----
+
+`-` 后面允许有空白:
+
+[source,perl6]
+----
+/ <-[a..z_]> <-alpha> /
+/ <- [a..z_]> <- alpha> / 
+----
+
+== grammar 中的空白
+
+=== `|` 忽略其左右两侧的空白
+
+[source,perl6]
+----
+grammar Token::Rule::Difference {
+    # 下面三者等价
+    # rule TOP { [\w+]+ % ' ' | [\d+]+ % ' '   }
+    # rule TOP { | [\w+]+ % ' ' | [\d+]+ % ' ' }
+    rule TOP { | [\w+]+ % ' '
+               | [\d+]+ % ' '
+             }
+}
+
+# $=finish.lines 中的每一行末尾都没有换行符
+for $=finish.lines -> $line {
+    print($line);
+    say Token::Rule::Difference.parse($line)
+}
+
+=finish
+token takes whitespace invisible unless with sigspace
+rule is a token without sigspace
+2015 12 25
+2016 01 07
+----
+
+输出：
+
+[source,txt]
+----
+token takes whitespace invisible unless with sigspace｢token takes whitespace invisible unless with sigspace｣
+rule is a token without sigspace｢rule is a token without sigspace｣
+2015 12 25｢2015 12 25｣
+2016 01 07｢2016 01 07｣
+----
+
+说明在 rule 中, `|` 左右两边的空格会被忽略, 这通常是为了使格式对齐, 看起来不乱。另外在 rule 中, 开头和末尾的空白也会被忽略。

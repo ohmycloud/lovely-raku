@@ -1,0 +1,103 @@
+== Slip
+
+`Slip` 是一种自动展平到外部容器中的 List。
+有时您想要将列表的元素插入到另一个列表中。这可以通过称为 `Slip` 的特殊类型的列表完成。
+
+[source,perl6]
+----
+say (1, (2, 3), 4) eqv (1, 2, 3, 4);         # OUTPUT: «False␤» 
+say (1, Slip.new(2, 3), 4) eqv (1, 2, 3, 4); # OUTPUT: «True␤» 
+say (1, slip(2, 3), 4) eqv (1, 2, 3, 4);     # OUTPUT: «True␤» 
+----
+
+另一种方法是使用 `|` 前缀运算符。请注意，这比逗号的优先级更高，因此它只影响单个值，但与上述选项不同，它会打破[标量](https://docs.perl6.org/type/Scalar)。
+
+[source,perl6]
+----
+say (1, |(2, 3), 4) eqv (1, 2, 3, 4);        # OUTPUT: «True␤» 
+say (1, |$(2, 3), 4) eqv (1, 2, 3, 4);       # OUTPUT: «True␤» 
+say (1, slip($(2, 3)), 4) eqv (1, 2, 3, 4);  # OUTPUT: «False␤» 
+----
+
+# [Slip](https://docs.perl6.org/type/Slip)
+
+[source,perl6]
+----
+class Slip is List {}
+----
+
+`Slip` 是一个 [List](https://docs.perl6.org/type/List)，自动展平到一个外部列表（或其他类似列表的容器或 iterable）中。
+
+例如，它允许你在不嵌套的情况下编写一个能够在结果中生成多个值的映射：
+
+[source,perl6]
+----
+say <a b c>.map({ ($_, $_.uc).Slip }).join('|');  # OUTPUT: «a|A|b|B|c|C␤»
+----
+
+相反，当返回一个普通的 List 时，结果列表是嵌套的：
+
+[source,perl6]
+----
+say <a b c>.map({ $_, $_.uc }).join('|');        # OUTPUT: «a A|b B|c C␤» 
+----
+
+要创建一个 `Slip`, 可以通过调用 `Slip` 方法或通过使用 `slip` 子例程来强转为另一个类似列表的类型：
+
+[source,perl6]
+----
+# This says "1" and then says "2", rather than saying "(1 2)" 
+.say for gather {
+    take slip(1, 2);
+}
+----
+
+`Slip` 也可以通过使用 `prefix:<|>` 运算符创建。`|` 与 `slip` 子例程在优先级和单个参数的处理方式上都不同。事实上，`prefix:<|>` 只接受一个参数，所以它比 `slip` 子例程更接近 `.Slip` 方法。
+
+[source,perl6]
+----
+my $l = (1, 2, 3);
+say (1, slip 2, 3).perl;  # says (1, 2, 3)      , slips 2, 3 into (1, …) 
+say (0, slip $l).perl;    # says (0, $(1, 2, 3)), $l does not break apart 
+say (0, $l.Slip).perl;    # says (0, 1, 2, 3)   , slips from $l into (0, …) 
+say (|$l).perl;           # says slip(1, 2, 3)  , breaks apart $l 
+say (0, (|$l, 4), 5);     # says (0 (1 2 3 4) 5), slips from $l into (…, 4) 
+say (0, ($l.Slip, 4), 5); # says (0 (1 2 3 4) 5), slips from $l into (…, 4) 
+say (0, (slip $l, 4), 5); # says (0 (1 2 3) 4 5), slips ($l, 4) into (0, …, 5) 
+say (0, ($l, 4).Slip, 5); # says (0 (1 2 3) 4 5), slips ($l, 4) into (0, …, 5) 
+----
+
+不希望为迭代产生值的循环使用 `Slip`s，而不是空 `List`s 来执行，就像不运行块的语句一样。
+
+请注意，`prefix:<|>` 也会以 slippy 的方式将参数应用于例程调用。它不会将 `Slip` 转发给所调用的例程，包括 `return` 和 `take`。
+
+[source,perl6]
+----
+my \l = gather for 1..10 -> $a, $b { take |($a, $b) }; say l.perl;
+# OUTPUT: «((1, 2), (3, 4), (5, 6), (7, 8), (9, 10)).Seq␤» 
+my \m= gather for 1..10 -> $a, $b { take ($a, $b).Slip }; say m.perl;
+# OUTPUT: «(1, 2, 3, 4, 5, 6, 7, 8, 9, 10).Seq␤» 
+----
+
+## 方法
+
+### slip 方法
+
+[source,perl6]
+----
+sub slip(*@ --> Slip:D)
+----
+
+从它的参数创造一个 `Slip`。
+
+## 常量
+
+### Empty
+
+`Empty` 是空列表的一个 `Slip`。
+
+[source,perl6]
+----
+say "".comb ~~ Empty;
+# OUTPUT: «True␤» 
+----

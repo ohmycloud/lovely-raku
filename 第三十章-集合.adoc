@@ -1,0 +1,90 @@
+
+.Table Set
+|====
+| 集合类型| Unicode 表示 | ASCII 表示 | 结果类型
+|属于
+|∈
+|(elem)
+|Bool
+
+|不属于
+|∉
+|!(elem)
+|Bool
+
+|包含
+|∋
+|(cont)
+|Bool
+
+|不包含
+|∌
+|!(cont)
+|Bool
+
+|并集
+|∪
+|(\|)
+|Set 或 Bag
+
+|交集
+|∩
+|(&)
+|Set 或 Bag
+
+|差集
+|∖
+|(-)
+|Set
+
+|子集
+|⊆
+|(<=)
+|Bool
+
+|非子集
+|⊈
+|!(<=)
+|Bool
+
+|真子集
+|⊂
+|(<)
+|Bool
+
+|非真子集
+|⊄
+|!(<)
+|Bool
+
+
+|超级
+|⊇
+|(>=)
+|Bool
+
+|非超级
+|⊉
+|!(>=)
+|Bool
+
+|真超级
+|⊃
+|(>)
+|Bool
+
+|非真超级
+|⊅
+|!(>)
+|Bool
+|====
+
+
+- 找到两个文件中共有的行
+
+[source,perl6]
+----
+my @a := "filea".IO.lines;
+my @b := "fileb".IO.lines;
+.say for keys( @a ∩ @b );
+----

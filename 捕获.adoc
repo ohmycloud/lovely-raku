@@ -1,0 +1,185 @@
+== Capture
+
+捕获是用于将参数传递给代码对象的容器。 捕获是link:https://docs.perl6.org/type/Signature[签名]的另一面 - 捕获是调用者定义的参数，而签名是被调用者定义的参数。
+
+当你调用 `print $a, $b` 时，`$a ,$b` 部分是一个 Capture。
+
+Captures 包含用于类似列表的部分的位置参数和类似哈希部分的命名参数，因此表现为 link:https://docs.perl6.org/type/Positional[位置性]和link:https://docs.perl6.org/type/Associative[关联性]，尽管它实际上并不混合这些角色。 对于命名参数，Captures 使用与普通List略有不同的语法。 
+
+也可以在之后制作、存储和使用独立捕获。 可以在项前面添加一个反斜杠 `\` 来创建文字 Capture。 通常，这个项将是一个项的列表，其中任何 Pair 字面量将被放置在命名部分, 所有其它项将被放置在位置部分。
+
+[source,perl6]
+----
+my $c = \(42);          # 带有一个位置部分的捕获
+$c = \(1, 2, a => 'b'); # 带有俩个位置部分和一个命名部分的捕获
+----
+
+要使用此类 Capture，你可以在函数调用中的捕获之前使用 `|`，它就好像把 Capture 中的值作为参数直接传递给函数 - 命名参数将作为命名参数传递，位置参数将作为位置参数传递。 即使使用不同的函数，你也可以根据需要多次重复使用这个 Capture。
+
+[source,perl6]
+----
+my $c = \(4, 2, 3);
+reverse(|$c).say;
+sort(5,|$c).say;
+----
+
+输出:
+
+[source,txt]
+----
+3 2 4
+2 3 4 5
+----
+
+在签名内部，可以通过在无符号参数前加上垂直条 `|` 来创建 Capture。 这会将参数列表的其余部分打包到该参数中。
+
+[source,perl6]
+----
+f(1, 2, 3, a => 4, b => 5);
+sub f($a, |c) {
+    # c  is  \(2, 3, a => 4, b => 5) 
+}
+----
+
+请注意，Captures 仍然是列表，因为它们可能包含容器，而不仅仅是值：
+
+[source,perl6]
+----
+my $b = 1;
+my $c = \(4, 2, $b, 3);
+sort(|$c).say;
+$b = 6;
+sort(|$c).say;
+----
+
+输出:
+
+[source,txt]
+----
+1 2 3 4
+2 3 4 6
+----
+
+== Capture 中的方法
+
+- list
+
+`list` 方法返回捕获的位置参数部分。
+
+[source,perl6]
+----
+my Capture $c = \(2, 3, 5, apples => (red => 2));
+say $c.list;
+----
+
+输出:
+
+[source,txt]
+---
+2 3 5
+---
+
+- hash
+
+`hash` 返回捕获的命名/散列部分。
+
+[source,perl6]
+----
+my Capture $c = \(2, 3, 5, apples => (red => 2));
+say $c.hash;
+----
+
+输出:
+
+[source,txt]
+----
+Map.new((apples => red => 2))
+----
+
+- elems
+
+返回捕获中的位置元素的个数。
+
+[source,perl6]
+----
+my Capture $c = \(2, 3, 5, apples => (red => 2));
+say $c.elems;                                  # OUTPUT: «3␤» 
+----
+
+- keys
+
+返回包含所有位置键的 link:https://docs.perl6.org/type/Seq[Seq]，后跟所有命名键。对于位置参数，键是从零开始的相应参数序号位置。
+
+[source,perl6]
+----
+my $capture = \(2, 3, 5, apples => (red => 2));
+say $capture.keys;                             # OUTPUT: «(0 1 2 apples)␤» 
+----
+
+- values
+
+返回包含所有位置值的 link:https://docs.perl6.org/type/Seq[Seq]，后跟所有命名参数值。
+
+[source,perl6]
+----
+my $capture = \(2, 3, 5, apples => (red => 2));
+say $capture.values;                           # OUTPUT: «(2 3 5 red => 2)␤» 
+----
+
+- kv
+
+返回交替键和值的 link:https://docs.perl6.org/type/Seq[Seq]。首先是位置link:https://docs.perl6.org/type/Capture#method_keys[键]和link:https://docs.perl6.org/type/Capture#method_values[值]（如果有），然后是命名键和值。
+
+[source,perl6]
+----
+my $capture = \(2, 3, apples => (red => 2));
+say $capture.kv;                                  # OUTPUT: «(0 2 1 3 apples red => 2)␤» 
+----
+
+- pairs
+
+返回所有参数，位置后跟命名，作为 Pairs 的序列。位置参数以各自的序数值（从零开始）作为键，而命名参数的名称作为键。
+
+[source,perl6]
+----
+my Capture $c = \(2, 3, apples => (red => 2));
+say $c.pairs;                                     # OUTPUT: «(0 => 2 1 => 3 apples => red => 2)␤» 
+----
+
+- antipairs
+
+返回所有参数，即命名后跟的位置，作为已交换键和值的对的Seq，即值变为键，键变为值。此行为与 link:https://docs.perl6.org/type/Capture#method_pairs[pair] 方法相反。
+
+[source,perl6]
+----
+my $capture = \(2, 3, apples => (red => 2));
+say $capture.antipairs;                           # OUTPUT: «(2 => 0 3 => 1 (red => 2) => apples)␤» 
+----
+
+- Bool
+
+如果 Capture 包含至少一个命名或一个位置参数，则返回 `True`。
+
+[source,perl6]
+----
+say \(1,2,3, apples => 2).Bool;                   # OUTPUT: «True␤» 
+say \().Bool;                                     # OUTPUT: «False␤» 
+----
+
+- Capture
+
+返回自己，即调用者。
+
+[source,perl6]
+----
+say \(1,2,3, apples => 2).Capture; # OUTPUT: «\(1, 2, 3, :apples(2))␤» 
+----
+
+- Numeric
+
+返回 Capture 中的位置元素数。
+
+[source,perl6]
+----
+say \(1,2,3, apples => 2).Numeric;                # OUTPUT: «3␤» 
+----

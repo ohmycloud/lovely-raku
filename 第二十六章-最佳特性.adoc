@@ -187,12 +187,54 @@ say \('hello'.WHAT) ~~ &f.signature; # => False
 ----
 
 
+== 元运算符
+
+元运算符是能操作运算符的运算符。
+
+[source,perl6]
+----
+qw/fun handy scalable/ Z~ qw/♥ ♥ ♥/
+----
+
+输出:
+
+[source,txt]
+----
+(fun♥ handy♥ scalable♥)
+----
 
 
+[source,perl6]
+----
+qw/fun handy scalable/ X~ qw/ly able/
+----
+
+输出:
+
+[source,perl6]
+.Output
+----
+(funly funable handyly handyable scalablely scalableable)
+----
 
 
+[source,perl6]
+----
+[+] qw/1 2 3/
+[*] qw/1 2 3 4 5/
+[~] qw/1 2 3 4 5/
+[\+] qw/1 2 3/
+----
 
+输出:
 
+[source,txt]
+----
+6
+120
+12345
+(1 3 6)
+----
 
 
 

@@ -13,6 +13,130 @@
 字符串操作
 === comb
 
+=== 普通字符
+
+你可以把 link:http://docs.perl6.org/routine/comb[comb] 用作子例程或方法。在它的最基本的形式中， comb 会把字符串分解为字符:
+
+[source,perl6]
+----
+'foobar moobar 駱駝道bar'.comb.join('|').say;
+'foobar moobar 駱駝道bar'.comb(6).join('|').say;
+
+# OUTPUT:
+# f|o|o|b|a|r| |m|o|o|b|a|r| |駱|駝|道|b|a|r
+# foobar| mooba|r 駱駝道b|ar
+----
+
+不应用任何参数的 comb 你会得到各个单独的字符。给 comb 提供一个整数 `$n`, 那么你会得到长度至多为 `$n` 个字符的一个列表，并且如果没有剩下的字符不够的话，这个列表会接收较短的这个字符串。这个方法比使用正则表快了 30 倍。
+
+=== 限制
+
+你也可以为 comb 提供第二个整数参数，即 **limit**，来标示每个列表中最多含有 limit 个元素:
+
+[source,perl6]
+----
+'foobar moobar 駱駝道bar'.comb(1, 5).join('|').say;
+'foobar moobar 駱駝道bar'.comb(6, 2).join('|').say;
+
+# OUTPUT:
+# f|o|o|b|a
+# foobar| mooba
+----
+
+这适用于使用 comb 方法/函数的所有形式，而不仅仅是上面展示的那样。
+
+=== 计数
+
+comb 也接收普通的 link:http://docs.perl6.org/type/Str[Str] 作为参数，返回一个包含那个字符串的匹配的列表。所以这在计算子字符串在字符串中出现的次数时很有用。
+
+[source,perl6]
+----
+'The 🐈 ran after a 🐁, but the 🐁 ran away'.comb('🐈').Int.say;
+'The 🐈 ran after a 🐁, but the 🐁 ran away'.comb('ran').Int.say;
+
+# OUTPUT:
+# 1
+# 2
+----
+
+=== 简单的匹配
+
+comb 的参数也可以是一个正则表达式，整个匹配会作为一个标量被返回：
+
+[source,perl6]
+----
+foobar moobar 駱駝道bar'.comb(/<[a..z]>+ 'bar'/).join('|').say;
+
+# OUTPUT:
+# foobar|moobar
+----
+
+=== 限制所匹配的东西
+
+你可以使用link:http://docs.perl6.org/language/regexes#Look-around_assertions[环视断言]或者更简单的 `<(` 和 `)>` 正则表达式捕获记号:
+
+[source,perl6]
+----
+'moo=meow ping=pong'.comb(/\w+    '=' <( \w**4/).join('|').say; # values
+'moo=meow ping=pong'.comb(/\w+ )> '='    \w**4/).join('|').say; # keys
+
+# OUTPUT:
+# meow|pong
+# moo|ping
+----
+
+你可以使用  `<(` 和 `)>` 两者之一或两者都使用。 `<(` 从匹配中排除任何它之前的东西而 `)>` 会排序之后的任何东西。即 `/'foo' <('bar')> 'ber'/` 会匹配包含 foobarber 的东西，但是从 comb 中返回的东西只会有 bar。
+
+=== 多个捕获
+
+怎么样得出 Perl 5 那样的 键/值对儿呢？
+
+[source,perl6]
+----
+my %things = 'moo=meow ping=pong'.comb(/(\w+) '=' (\w+)/, :match)».Slip».Str;
+say %things;
+
+# OUTPUT:
+# moo => meow, ping => pong
+----
+
+圆括号用于捕获。`:match` 参数使 comb 返回一个 **Match** 对象的列表，而非返回一个字符串列表。下一步，我们使用两个 **hyper** 运算符把 Matches 转换为 link:http://docs.perl6.org/type/Slip[Slips]，这会给我们一个捕获的列表，但是它们仍旧是 **Match** 对象，这就是为什么我们还要把它们转换为 **Str** 的原因。
+
+我们还可以使用具名捕获使代码更清晰：
+
+[source,perl6]
+----
+my %things = 'moo=meow ping=pong'
+    .comb(/$<key>=\w+ '=' $<value>=\w+/, :match)
+    .map({ .<key> => .<value>.Str });
+say %things;
+
+# OUTPUT:
+# moo => meow, ping => pong
+----
+
+你还可以把上面的代码写成这样：
+
+[source,perl6]
+----
+my %things = ('moo=meow ping=pong' ~~ m:g/(\w+) '=' (\w+)/)».Slip».Str;
+say %things;
+
+# OUTPUT:
+# moo => meow, ping => pong
+----
+
+注意：
+
+代替使用带有 :match 参数的 .comb , 你最好就使用 .match 方法好了:
+
+[source,perl6]
+----
+'moo=meow ping=pong'.match(/(\w+) '=' (\w+)/, :g)
+----
+
+使用正则表达式:
+
 [source,perl6]
 .comb
 ----
@@ -32,18 +156,212 @@ $str.comb: /<:alpha>+/
 
 === subst subst-mutate 字符串截取
 
+link:https://docs.perl6.org/routine/subst[subst] 取的是单词 substitution(替换)的前5个字符, 意为替换之意。其签名为:
+
+[source,perl6]
+----
+multi method subst(Str:D: $matcher, $replacement, *%opts)
+----
+
+返回被调用的那个字符串, 其中 `$matcher` 被 `$replacement` 给替换掉了(或者返回原来的字符串, 如果没有找到匹配的话)。
+
+`subst` 有一个「就地」替换的句法变体, 它被拼写为 `s/matcher/replacement/`。
+
+`$matcher` 可以是一个正则表达式, 或者一个字符串字面值。 Cool 类型的非字符串 matcher 会被强转为字符串以用于字面上的匹配。
+
 [source,perl6]
 .script
 ----
-
+my $some-string    = "Some foo";
+my $another-string = $some-string.subst(/foo/, "string"); # gives 'Some string'
+$some-string.=subst(/foo/, "string"); # 就地替换 $some-string 现在是 'Some string'
 ----
+
+`replacement` 可以是一个闭包:
+
+[source,perl6]
+----
+my $i = 41;
+my $str = "The answer is secret.";
+my $real-answer = $str.subst(/secret/, {++$i}); # The answer is 42
+----
+
+下面是 subst 其它用法的例子:
+
+[source,perl6]
+----
+my $str = "Hey foo foo foo";
+$str.subst(/foo/, "bar", :g);         # 全局替换 - 返回 Hey bar bar bar
+
+$str.subst(/foo/, "no subst", :x(0)); # 有针对性的替换。要替换的次数. 返回未修改过的字符串.
+$str.subst(/foo/, "bar", :x(1));      # 只替换第一次出现。
+
+$str.subst(/foo/, "bar", :nth(3));    # 单独替换第 n 个匹配. 替换第三个 foo. 返回 Hey foo foo bar
+----
+
+第三个参数传递给散列, 例如 `:g` 被吞噬参数 `*%opts` 接收, 意为 `g => True`。
+其中的 `:nth` 副词拥有可读的长得像英语那样的变体:
+
+[source,perl6]
+----
+say 'ooooo'.subst: 'o', 'x', :1st; # xoooo
+say 'ooooo'.subst: 'o', 'x', :2nd; # oxooo
+say 'ooooo'.subst: 'o', 'x', :3rd; # ooxoo
+say 'ooooo'.subst: 'o', 'x', :4th; # oooxo
+----
+
+`.subst` 是 **S** 的方法形式:
+
+[source,perl6]
+----
+say 'meowmix'.subst: 'me', 'c';
+say 'meowmix'.subst: /m./, 'c';
+
+# OUTPUT:
+# cowmix
+# cowmix
+----
+
+subst 还支持下面的副词:
+
+.Table subst
+|===
+| **short** | **long** | **meaning**
+
+| :g
+| :global
+| 尽可能多次地替换
+
+| :nth(Int\|Callable)
+|
+| 只替换第n次匹配; 别名: :st, :nd, :rd, 和 :th
+
+| :ss
+| :samespace
+| 替换时保留空格
+
+| :ii
+| :samecase
+| 替换时保留大小写
+
+| :mm
+| :samemark
+| 保留字符标记(例如,用 'o' 替换 'ü' 会导致 'ö')
+
+| :x(Int\|Callable)
+| 
+| 精确地替换 $x 次
+
+|===
+
+在方法形式中，你必须把这些副词应用到正则表达式自身身上：
+
+[source,perl6]
+----
+given 'Lorem Ipsum Dolor Sit Amet' {
+    say .subst: /:i l/, 'b', :ii;
+    say .subst: /:s Ipsum Dolor/, "Gipsum\nColor", :ss;
+}
+
+# OUTPUT:
+# Borem Ipsum Dolor Sit Amet
+# Lorem Gipsum Color Sit Amet
+----
+
+方法形式的捕获
+
+捕获对于替换操作来说不陌生，所以我们来尝试捕获下方法调用形式的替换：
+
+[source,perl6]
+----
+say 'meowmix'.subst: /me (.+)/, "c$0";
+
+# OUTPUT:
+# Use of Nil in string context  in block <unit> at test.p6 line 1
+# c
+----
+
+不是我们要找的。我们的替换字符串构建在达到 `.subst` 方法之前，并且里面的 `$0` 变量实际上指向任何这个方法调用之前的东西，而不是 `.subst` 正则表达式中的捕获。所以我们怎么来修正它呢？
+
+`.subst` 方法的第二个参数也可以接受一个 link:http://docs.perl6.org/type/Callable[Callable]。在它里面，你可以使用 `$0`, `$1`, ... `$n` 变量，直到你想要的编号，并从捕获中得到正确的值：
+
+[source,perl6]
+----
+say 'meowmix'.subst: /me (.+)/, -> { "c$0" };
+
+# OUTPUT:
+# cowmix
+----
+
+这里，我们为我们的 **Callable** 使用了 `-> { ... }` 尖号块儿，但是 **WhateverCode** 和子例程也有效。每次替换都会调用这个 Callable，并且把 link:hhttp://docs.perl6.org/type/Match[Match] 对象作为第一个位置参数传递给 Callable， 如果你需要访问它的话。
+
+=== S///
+
+`S///` 操作符在 Perl 6 中是 `s///` 操作符的战友，它不是修改原来的字符串，而是拷贝原来的字符串，修改，然后返回修改过的版本。
+
+我们知道了 `S///` 总是作用在 `$_` 上并且返回替换后的结果，很容易就想到几种方法把 `$_` 设置为我们原来的字符串并把 `S///` 的返回值收集回来，我们来看几个例子：
+
+[source,perl6]
+----
+my $orig = 'meowmix';
+my $new  = S/me/c/ given $orig;
+say $orig;
+say $new;
+
+my @orig = <meow cow sow vow>;
+my @new  = do for @orig { S/\w+ <?before 'ow'>/w/ };
+say @orig;
+say @new;
+----
+
+输出:
+
+[source,txt]
+----
+meowmix
+cowmix
+[meow cow sow vow]
+[wow wow wow wow]
+----
+
+第一个作用在单个值上。我们使用后置形式的 `given` 块儿，这让我们避免了花括号（你可以使用 `with` 代替 `given` 得到同样的结果）。`given $orig` 会给 `$orig` 起个叫做 `$_` 的别名。从输出来看，原字符串没有被更改。
+
+第二个例子作用在数组中的一堆字符串身上并且我们使用 `do` 关键字来执行常规的 `for` 循环(那种情况下，它把循环变量别名给 `$_` 了)并把结果赋值给 `@new` 数组。再次，输出显示原来的数组并没有发生改变。
+
+=== 带副词的 S
+
+`S///` 操作符 -- 就像 `s///` 操作符和某些方法一样 -- 允许你使用正则表达式副词：
+
+[source,perl6]
+----
+given 'Lörem Ipsum Dolor Sit Amet' {
+    say S:g      /m/g/;  # Löreg Ipsug Dolor Sit Aget
+    say S:i      /l/b/;  # börem Ipsum Dolor Sit Amet
+    say S:ii     /l/b/;  # Börem Ipsum Dolor Sit Amet
+    say S:mm     /o/u/;  # Lürem Ipsum Dolor Sit Amet
+    say S:nth(2) /m /g/; # Lörem Ipsug Dolor Sit Amet
+    say S:x(2)   /m /g/; # Löreg Ipsug Dolor Sit Amet
+    say S:ss/Ipsum Dolor/Gipsum\nColor/; # Lörem Gipsum Color Sit Amet
+    say S:g:ii:nth(2) /m/g/;             # Lörem Ipsug Dolor Sit Amet
+}
+----
+
+如你所见，它们以 `:foo` 的形式添加在操作符 **S** 这个部件的后面。你可以大大方方地使用空白符号并且几个副词可以同时使用。下面是它们的意义：
+
+- :g —(长形式：:global)全局匹配：替换掉所有的出现  
+- :i —不区分大小写的匹配  
+- :ii —(长形式： :samecase) 保留大小写：不管用作替换字母的大小写，使用原来被替换的字母的大小写  
+- :mm —(长形式：:samemark) 保留重音符号：在上面的例子中，字母 o 上的分音符号被保留并被应用到替换字母 u 上  
+- :nth(n) —只替换第 n 次出现的  
+- :x(n) —至多替换 n 次（助记符: 'x' 作为及时）  
+- :ss —(长形式：samespace)保留空白类型：空白字符的类型被保留，而不管替换字符串中使用的是什么空白字符。在上面的例子中，我们使用换行作为替换，但是原来的空白被保留了。  
 
 === split 字符串分割
 
 [source,perl6]
 .script
 ----
-
+'fun,handy,scalable'.split(',')
 ----
 
 === join 字符串连接
@@ -51,7 +369,14 @@ $str.comb: /<:alpha>+/
 [source,perl6]
 .script
 ----
+["fun", "handy", "scalable"].join(",")
+----
 
+输出:
+
+[source,txt]
+----
+fun,handy,scalable
 ----
 
 === trans 字符串翻译
@@ -59,7 +384,7 @@ $str.comb: /<:alpha>+/
 [source,perl6]
 .script
 ----
-
+'learnable'.trans: 'ae' => 'AE' # lEArnAblE
 ----
 
 === flip 字符串翻转
@@ -67,7 +392,7 @@ $str.comb: /<:alpha>+/
 [source,perl6]
 .script
 ----
-
+'learnable'.flip # elbanrael
 ----
 
 === trim-leading trim-trailing trim chomp chop
@@ -75,7 +400,11 @@ $str.comb: /<:alpha>+/
 [source,perl6]
 .script
 ----
-
+'  learnable'.trim-leading.perl  # "learnable"
+'learnable  '.trim-trailing.perl # "learnable"
+'  learnable  '.trim.perl        # "learnable"
+"learnable\n".chomp.perl         # "learnable"
+"learnable".chop.perl            # "learnabl"
 ----
 
 字符串位置：
@@ -84,7 +413,7 @@ $str.comb: /<:alpha>+/
 [source,perl6]
 .script
 ----
-
+'learnable'.indices('l') # (0 7)
 ----
 
 === index 
@@ -92,7 +421,7 @@ $str.comb: /<:alpha>+/
 [source,perl6]
 .script
 ----
-
+'learnable'.index('l') # 0
 ----
 
 === rindex 
@@ -100,7 +429,7 @@ $str.comb: /<:alpha>+/
 [source,perl6]
 .script
 ----
-
+'learnable'.rindex('l') # 7
 ----
 
 === starts-with 
@@ -108,7 +437,7 @@ $str.comb: /<:alpha>+/
 [source,perl6]
 .script
 ----
-
+'learnable'.starts-with('learn') # True
 ----
 
 === ends-with 
@@ -116,7 +445,7 @@ $str.comb: /<:alpha>+/
 [source,perl6]
 .script
 ----
-
+'learnable'.ends-with('able') # True
 ----
 
 === pred succ
@@ -133,7 +462,14 @@ $str.comb: /<:alpha>+/
 [source,perl6]
 .script
 ----
+"fun\nhandy\nscalable\nlearnable".lines.perl
+----
 
+输出:
+
+[source,perl6]
+----
+("fun", "handy", "scalable", "learnable").Seq
 ----
 
 === words
@@ -141,7 +477,14 @@ $str.comb: /<:alpha>+/
 [source,perl6]
 .script
 ----
+'fun handy scalable learnable'.words.perl
+----
 
+输出:
+
+[source,perl6]
+----
+("fun", "handy", "scalable", "learnable").Seq
 ----
 
 === contains
@@ -149,7 +492,7 @@ $str.comb: /<:alpha>+/
 [source,perl6]
 .script
 ----
-
+'learnable'.contains('able') # True
 ----
 
 === match
@@ -157,7 +500,8 @@ $str.comb: /<:alpha>+/
 [source,perl6]
 .script
 ----
-
+'learnable'.match('able')
+'learnable'.match(/able/)
 ----
 
 == indent
@@ -165,7 +509,14 @@ $str.comb: /<:alpha>+/
 [source,perl6]
 .script
 ----
+('fun','handy','scalable','learnable')».indent(1)
+----
 
+输出:
+
+[source,txt]
+----
+( fun  handy  scalable  learnable)
 ----
 
 大小写
@@ -175,7 +526,12 @@ $str.comb: /<:alpha>+/
 [source,perl6]
 .script
 ----
-
+'fun'.uc
+'FUN'.lc
+'fun'.tc
+'Fun'.fc
+'fun Handy'.tclc
+'fun Handy'.wordcase
 ----
 
 == 字符串引用/插值
